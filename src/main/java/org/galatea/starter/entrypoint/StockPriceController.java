@@ -22,10 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j // logging
 @Validated // evaluate method parameter constraint annotations
-@RestController
+@RestController // @Controller + @ResponseBody
 public class StockPriceController extends BaseRestController {
 
-  private final ObjectMapper mapper = new ObjectMapper();
+  @Autowired
+  ObjectMapper mapper;
 
   @Value("${alpha-vantage.api-key}")
   private String apiKey;

@@ -1,5 +1,6 @@
 package org.galatea.starter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Logger;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.aspect4log.aspect.LogAspect;
@@ -17,6 +18,15 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 @EnableCaching
 @EnableFeignClients
 public class AppConfig {
+
+  /**
+   * Create ObjectMapper for fetching API data as a JsonNode and creating ObjectNodes.
+   * @return
+   */
+  @Bean
+  public ObjectMapper createObjectMapper() {
+    return new ObjectMapper();
+  }
 
   /**
    * Create a LogAspect for use with the SpringAOP @Log annotation.
