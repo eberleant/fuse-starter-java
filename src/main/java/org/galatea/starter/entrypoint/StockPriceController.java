@@ -78,11 +78,10 @@ public class StockPriceController extends BaseRestController {
 
     // store result of api call in db
 
-    // get audit info (as ObjectNode? HashMap?)
-    ObjectNode auditInfo = getAuditInfo(stock, days);
+    ObjectNode metadata = getMetadata(stock, days);
     // create and return final json with audit info + StockPrice array
     ObjectNode rootNode = mapper.createObjectNode();
-    rootNode.set("audit-info", auditInfo);
+    rootNode.set("metadata", metadata);
     rootNode.set("data", mapper.valueToTree(stockPrices));
     return rootNode;
   }
@@ -93,25 +92,24 @@ public class StockPriceController extends BaseRestController {
    * @param days from params in API request; represents number of days to retrieve stock info
    * @return
    */
-  private ObjectNode getAuditInfo(final String stock, final int days) {
-    ObjectNode auditInfo = mapper.createObjectNode();
-    auditInfo.put("description", "Daily stock prices (open)"); // should i use open or?
-    auditInfo.put("stock", stock);
-    auditInfo.put("days", days);
-    auditInfo.put("request-date", new Date(System.currentTimeMillis()).toString());
-    auditInfo.put("time-zone", "US/Eastern");
-    return auditInfo;
+  private ObjectNode getMetadata(final String stock, final int days) {
+    ObjectNode metadata = mapper.createObjectNode();
+    metadata.put("description", "Daily stock prices (open)"); // should i use open or?
+    metadata.put("stock", stock);
+    metadata.put("days", days);
+    metadata.put("request-date", new Date(System.currentTimeMillis()).toString());
+    metadata.put("time-zone", "US/Eastern");
+    return metadata;
   }
 
   @SneakyThrows
   private ArrayList<StockPrice> createStockPrices(
       JsonNode timeSeries, final String stock) {
-    System.out.println(timeSeries.fieldNames());
     ArrayList<StockPrice> stockPrices = new ArrayList<>();
     Iterator<Entry<String, JsonNode>> timeSeriesNodes = timeSeries.fields();
+    // build a StockPrice object for each entry in timeSeries
     while (timeSeriesNodes.hasNext()) {
       Map.Entry<String, JsonNode> timeSeriesEntry = timeSeriesNodes.next();
-      System.out.println(timeSeriesEntry.getValue().get(priceKey).textValue());
       // switch to using custom constructor?
       // use custom ITranslator??
       stockPrices.add(
