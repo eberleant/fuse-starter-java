@@ -1,7 +1,6 @@
 package org.galatea.starter.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.math.BigDecimal;
 import java.sql.Date;
 import javax.persistence.GeneratedValue;
@@ -14,14 +13,14 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.galatea.starter.utils.http.converter.StockPriceSerializer;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE) // For builder
 @Builder
 // may consider changing to @Data (@Value does not include setters)
 @Value
 @Slf4j // creates logger object, log
-@JsonSerialize(using = StockPriceSerializer.class)
+//@JsonSerialize(using = StockPriceSerializer.class)
+@JsonIgnoreProperties({"id", "stock"})
 public class StockPrice {
 //  public StockPrice(Map.Entry<String, JsonNode> timeSeriesEntry, final String stock, String priceKey) {
 //    // consider calling AllArgsConstructor instead of setting fields manually

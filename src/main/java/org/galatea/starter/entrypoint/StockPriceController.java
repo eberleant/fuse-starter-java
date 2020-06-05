@@ -1,11 +1,15 @@
 package org.galatea.starter.entrypoint;
 
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -20,6 +24,7 @@ import org.galatea.starter.utils.Helpers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -34,7 +39,7 @@ public class StockPriceController extends BaseRestController {
   StockPriceService stockPriceService;
 
   @Autowired
-  ObjectMapper mapper;
+  ObjectMapper objectMapper;
 
   @Value("${alpha-vantage.api-key}")
   private String apiKey;
@@ -61,6 +66,7 @@ public class StockPriceController extends BaseRestController {
       @RequestParam(value = "stock", defaultValue = "DNKN") final String stock,
       @RequestParam(value = "days", defaultValue = "5") @Min(0) final int days,
       @RequestParam(value = "requestId", required = false) final String requestId) {
+    log.info("date format = {}", objectMapper.getDateFormat().format(Date.from(Instant.now())));
     // if an external request id was provided, grab it
     processRequestId(requestId);
     // make db call
@@ -72,21 +78,22 @@ public class StockPriceController extends BaseRestController {
         + "&symbol=" + stock
         + "&outputsize=" + (days > 100 ? "full" : "compact")
         + "&apikey=" + apiKey);
-    JsonNode avResponseJson = mapper.readTree(requestUrl);
+    JsonNode avResponseJson = objectMapper.readTree(requestUrl);
 
     // create array of StockPrice objects from db/api calls
     List<StockPrice> stockPrices =
         stockPriceService.findMostRecentStockPrices(days,
             createStockPrices(avResponseJson.get(dailyTimeSeriesKey), stock));
+    log.info("date = {}", stockPrices.get(0).getDate());
 
 
     // store result of api call in db
 
     ObjectNode metadata = getMetadata(stock, days);
     // create and return final json with audit info + StockPrice array
-    ObjectNode rootNode = mapper.createObjectNode();
+    ObjectNode rootNode = objectMapper.createObjectNode();
     rootNode.set("metadata", metadata);
-    rootNode.set("data", mapper.valueToTree(stockPrices));
+    rootNode.set("data", objectMapper.readTree(objectMapper.writeValueAsString(stockPrices)));
     return rootNode;
   }
 
@@ -97,7 +104,7 @@ public class StockPriceController extends BaseRestController {
    * @return
    */
   private ObjectNode getMetadata(final String stock, final int days) {
-    ObjectNode metadata = mapper.createObjectNode();
+    ObjectNode metadata = objectMapper.createObjectNode();
     metadata.put("description", "Daily stock prices (open)"); // should i use open or?
     metadata.put("stock", stock);
     metadata.put("days", days);

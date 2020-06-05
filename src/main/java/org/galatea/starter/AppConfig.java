@@ -2,15 +2,19 @@ package org.galatea.starter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Logger;
+import java.text.SimpleDateFormat;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.aspect4log.aspect.LogAspect;
 import org.galatea.starter.domain.SettlementMission;
 import org.galatea.starter.service.IAgreementTransformer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 @Slf4j
 @Configuration
@@ -19,14 +23,12 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 @EnableFeignClients
 public class AppConfig {
 
-  /**
-   * Create ObjectMapper for fetching API data as a JsonNode and creating ObjectNodes.
-   * @return
-   */
-  @Bean
-  public ObjectMapper createObjectMapper() {
-    return new ObjectMapper();
-  }
+//  @Bean
+//  public Jackson2ObjectMapperBuilder objectMapperBuilder() {
+//    Jackson2ObjectMapperBuilder b = new Jackson2ObjectMapperBuilder();
+//    b.indentOutput(true);
+//    return b;
+//  }
 
   /**
    * Create a LogAspect for use with the SpringAOP @Log annotation.
