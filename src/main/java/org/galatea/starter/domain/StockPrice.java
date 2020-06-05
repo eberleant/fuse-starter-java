@@ -11,15 +11,15 @@ import javax.validation.constraints.DecimalMin;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NonNull;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.utils.http.converter.StockPriceSerializer;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE) // For builder
 @Builder
-// may consider changing to @Value and having @NonFinal on id? check if mutable using builder/setter
-@Data
+// may consider changing to @Data (@Value does not include setters)
+@Value
 @Slf4j // creates logger object, log
 @JsonSerialize(using = StockPriceSerializer.class)
 public class StockPrice {
