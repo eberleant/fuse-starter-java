@@ -3,15 +3,18 @@ package org.galatea.starter.entrypoint;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Date;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import javax.validation.constraints.Min;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.domain.StockPrice;
+import org.galatea.starter.utils.Helpers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -34,6 +37,12 @@ public class StockPriceController extends BaseRestController {
   @Value("${alpha-vantage.basePath}")
   private String basePath;
 
+  @Value("${alpha-vantage.price-key}")
+  private String priceKey;
+
+  @Value("${alpha-vantage.daily-time-series-key}")
+  private String dailyTimeSeriesKey;
+
   /**
    * Handle /price route.
    * @param stock symbol from parameters of /price URL
@@ -44,7 +53,7 @@ public class StockPriceController extends BaseRestController {
   @GetMapping(value = "${mvc.getPricePath}", produces = {
       MediaType.APPLICATION_JSON_VALUE})
   public ObjectNode price(
-      @RequestParam(value = "stock", defaultValue = "DNDK") final String stock,
+      @RequestParam(value = "stock", defaultValue = "DNKN") final String stock,
       @RequestParam(value = "days", defaultValue = "5") @Min(0) final int days,
       @RequestParam(value = "requestId", required = false) final String requestId) {
     // if an external request id was provided, grab it
@@ -61,11 +70,11 @@ public class StockPriceController extends BaseRestController {
     JsonNode avResponseJson = mapper.readTree(requestUrl);
 
     // create array of StockPrice objects from db/api calls
-    StockPrice[] stockPrices = new StockPrice[days];
-    stockPrices[0] = StockPrice.builder()
-        .stock(stock)
-        .date(new Date(0))
-        .price(new BigDecimal(0)).build();
+    System.out.println(dailyTimeSeriesKey);
+    System.out.println(mapper.writeValueAsString(avResponseJson.get(dailyTimeSeriesKey)));
+
+    ArrayList<StockPrice> stockPrices = createStockPrices(
+        avResponseJson.get(dailyTimeSeriesKey), stock);
 
     // store result of api call in db
 
@@ -92,5 +101,26 @@ public class StockPriceController extends BaseRestController {
     auditInfo.put("request-date", new Date(System.currentTimeMillis()).toString());
     auditInfo.put("time-zone", "US/Eastern");
     return auditInfo;
+  }
+
+  @SneakyThrows
+  private ArrayList<StockPrice> createStockPrices(
+      JsonNode timeSeries, final String stock) {
+    System.out.println(timeSeries.fieldNames());
+    ArrayList<StockPrice> stockPrices = new ArrayList<>();
+    Iterator<Entry<String, JsonNode>> timeSeriesNodes = timeSeries.fields();
+    while (timeSeriesNodes.hasNext()) {
+      Map.Entry<String, JsonNode> timeSeriesEntry = timeSeriesNodes.next();
+      System.out.println(timeSeriesEntry.getValue().get(priceKey).textValue());
+      // switch to using custom constructor?
+      // use custom ITranslator??
+      stockPrices.add(
+          StockPrice.builder()
+            .date(Helpers.stringToDate(timeSeriesEntry.getKey()))
+            .price(new BigDecimal(timeSeriesEntry.getValue().get(priceKey).textValue()))
+            .stock(stock).build());
+    }
+
+    return stockPrices;
   }
 }

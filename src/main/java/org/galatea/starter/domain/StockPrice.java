@@ -1,23 +1,33 @@
 package org.galatea.starter.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
 import java.sql.Date;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.validation.constraints.DecimalMin;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
+@AllArgsConstructor(access = AccessLevel.PRIVATE) // For builder
 @Builder
-// immutable version of @Data; creates getters and constructor (@AllArgsConstructor)
-// may change to @Data later if decide it should be mutable?
-@Value
+// may consider changing to @Value and having @NonFinal on id? check if mutable using builder/setter
+@Data
 @Slf4j // creates logger object, log
+@JsonIgnoreProperties({"id"})
 public class StockPrice {
+//  public StockPrice(Map.Entry<String, JsonNode> timeSeriesEntry, final String stock, String priceKey) {
+//    // consider calling AllArgsConstructor instead of setting fields manually
+//    this.date = stringToDate(timeSeriesEntry.getKey());
+//    this.stock = stock;
+//    this.price = new BigDecimal(mapper.writeValueAsString(
+//        timeSeriesEntry.getValue().get(priceKey)));
+//  }
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)

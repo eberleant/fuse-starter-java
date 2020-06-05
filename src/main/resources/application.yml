@@ -33,6 +33,8 @@ jms:
    agreement-queue-proto: sandbox.agreement.proto
 alpha-vantage:
    api-key: 2TE9BO3PHOK5W9HH
+   daily-time-series-key: Time Series (Daily)
+   price-key: 1. open
    basePath: https://www.alphavantage.co/
 # Set debug level logging for the IEX Client so that Feign requests and responses are logged out
 log.level.org.galatea.starter.service.IEXClient: DEBUG

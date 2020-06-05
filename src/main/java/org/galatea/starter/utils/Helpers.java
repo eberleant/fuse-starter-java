@@ -4,6 +4,9 @@ import static org.springframework.util.ReflectionUtils.doWithMethods;
 import static org.springframework.util.ReflectionUtils.invokeMethod;
 
 import java.lang.reflect.Modifier;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.builder.DiffBuilder;
@@ -40,5 +43,16 @@ public class Helpers {
         invokeMethod(method, lhs), invokeMethod(method, rhs)), filter);
 
     return builder.build();
+  }
+
+  /**
+   * Converts String representation of date (yyyy-MM-dd) into instance of java.sql.Date class
+   * @param strDate
+   * @return
+   */
+  public static Date stringToDate(String strDate) {
+    DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    LocalDate localDate = LocalDate.parse(strDate, format);
+    return Date.valueOf(localDate);
   }
 }
