@@ -8,12 +8,14 @@ import java.net.URL;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import javax.validation.constraints.Min;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.domain.StockPrice;
+import org.galatea.starter.service.StockPriceService;
 import org.galatea.starter.utils.Helpers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +29,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated // evaluate method parameter constraint annotations
 @RestController // @Controller + @ResponseBody
 public class StockPriceController extends BaseRestController {
+
+  @Autowired
+  StockPriceService stockPriceService;
 
   @Autowired
   ObjectMapper mapper;
@@ -65,16 +70,15 @@ public class StockPriceController extends BaseRestController {
     // make api call to AlphaVantage
     URL requestUrl = new URL(basePath + "/query?function=TIME_SERIES_DAILY"
         + "&symbol=" + stock
-        + "&contentsize=" + (days > 100 ? "full" : "compact")
+        + "&outputsize=" + (days > 100 ? "full" : "compact")
         + "&apikey=" + apiKey);
     JsonNode avResponseJson = mapper.readTree(requestUrl);
 
     // create array of StockPrice objects from db/api calls
-    System.out.println(dailyTimeSeriesKey);
-    System.out.println(mapper.writeValueAsString(avResponseJson.get(dailyTimeSeriesKey)));
+    List<StockPrice> stockPrices =
+        stockPriceService.findMostRecentStockPrices(days,
+            createStockPrices(avResponseJson.get(dailyTimeSeriesKey), stock));
 
-    ArrayList<StockPrice> stockPrices = createStockPrices(
-        avResponseJson.get(dailyTimeSeriesKey), stock);
 
     // store result of api call in db
 
@@ -97,7 +101,8 @@ public class StockPriceController extends BaseRestController {
     metadata.put("description", "Daily stock prices (open)"); // should i use open or?
     metadata.put("stock", stock);
     metadata.put("days", days);
-    metadata.put("request-date", new Date(System.currentTimeMillis()).toString());
+    metadata.put("request-date",
+        Helpers.getStartOfDay(new Date(System.currentTimeMillis())).toString());
     metadata.put("time-zone", "US/Eastern");
     return metadata;
   }
