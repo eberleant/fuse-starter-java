@@ -18,6 +18,7 @@ import java.util.Map.Entry;
 import javax.validation.constraints.Min;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.galatea.starter.domain.Prices;
 import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.service.StockPriceService;
 import org.galatea.starter.utils.Helpers;
@@ -47,11 +48,20 @@ public class StockPriceController extends BaseRestController {
   @Value("${alpha-vantage.basePath}")
   private String basePath;
 
-  @Value("${alpha-vantage.price-key}")
-  private String priceKey;
-
   @Value("${alpha-vantage.daily-time-series-key}")
   private String dailyTimeSeriesKey;
+
+  @Value("${alpha-vantage.open-price-key}")
+  private String openPriceKey;
+
+  @Value("${alpha-vantage.high-price-key}")
+  private String highPriceKey;
+
+  @Value("${alpha-vantage.low-price-key}")
+  private String lowPriceKey;
+
+  @Value("${alpha-vantage.close-price-key}")
+  private String closePriceKey;
 
   /**
    * Handle /price route.
@@ -66,7 +76,6 @@ public class StockPriceController extends BaseRestController {
       @RequestParam(value = "stock", defaultValue = "DNKN") final String stock,
       @RequestParam(value = "days", defaultValue = "5") @Min(0) final int days,
       @RequestParam(value = "requestId", required = false) final String requestId) {
-    log.info("date format = {}", objectMapper.getDateFormat().format(Date.from(Instant.now())));
     // if an external request id was provided, grab it
     processRequestId(requestId);
     // make db call
@@ -84,8 +93,6 @@ public class StockPriceController extends BaseRestController {
     List<StockPrice> stockPrices =
         stockPriceService.findMostRecentStockPrices(days,
             createStockPrices(avResponseJson.get(dailyTimeSeriesKey), stock));
-    log.info("date = {}", stockPrices.get(0).getDate());
-
 
     // store result of api call in db
 
@@ -126,9 +133,14 @@ public class StockPriceController extends BaseRestController {
       // use custom ITranslator??
       stockPrices.add(
           StockPrice.builder()
-            .date(Helpers.stringToDate(timeSeriesEntry.getKey()))
-            .price(new BigDecimal(timeSeriesEntry.getValue().get(priceKey).textValue()))
-            .stock(stock).build());
+              .date(Helpers.stringToDate(timeSeriesEntry.getKey()))
+              .prices(Prices.builder()
+                  .open(new BigDecimal(timeSeriesEntry.getValue().get(openPriceKey).textValue()))
+                  .high(new BigDecimal(timeSeriesEntry.getValue().get(highPriceKey).textValue()))
+                  .low(new BigDecimal(timeSeriesEntry.getValue().get(lowPriceKey).textValue()))
+                  .close(new BigDecimal(timeSeriesEntry.getValue().get(closePriceKey).textValue()))
+                  .build())
+              .stock(stock).build());
     }
 
     return stockPrices;

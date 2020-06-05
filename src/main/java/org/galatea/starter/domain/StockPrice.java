@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 // may consider changing to @Data (@Value does not include setters)
 @Value
 @Slf4j // creates logger object, log
-//@JsonSerialize(using = StockPriceSerializer.class)
 @JsonIgnoreProperties({"id", "stock"})
 public class StockPrice {
 //  public StockPrice(Map.Entry<String, JsonNode> timeSeriesEntry, final String stock, String priceKey) {
@@ -37,11 +36,10 @@ public class StockPrice {
   @NonNull
   String stock;
 
-  @DecimalMin("0.00")
-  @NonNull
-  BigDecimal price;
-
   @NonNull
   Date date;
+
+  @NonNull
+  Prices prices;
 
 }
