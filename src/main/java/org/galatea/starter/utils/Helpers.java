@@ -8,11 +8,14 @@ import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.TimeZone;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.builder.DiffBuilder;
 import org.apache.commons.lang3.builder.DiffResult;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -20,6 +23,7 @@ import org.springframework.util.ReflectionUtils.MethodFilter;
 
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@Slf4j
 public class Helpers {
 
   /**
@@ -70,16 +74,17 @@ public class Helpers {
    * @param date
    * @return
    */
-  public static Date getStartOfDay(Date date) {
+  private static Date getStartOfDay(Date date) {
     Calendar calendar = Calendar.getInstance();
     calendar.setTimeZone(TimeZone.getTimeZone("America/New_York"));
     calendar.setTime(date);
-    calendar.set(
+    ZoneId zoneId = ZoneId.of("America/New_York");
+    LocalDate today = LocalDate.of(
         calendar.get(Calendar.YEAR),
-        calendar.get(Calendar.MONTH),
-        calendar.get(Calendar.DAY_OF_MONTH),
-        0, 0, 0);
-    return new Date(calendar.getTimeInMillis());
+        calendar.get(Calendar.MONTH) + 1,
+        calendar.get(Calendar.DAY_OF_MONTH));
+    ZonedDateTime zdtStart = today.atStartOfDay(zoneId) ;
+    return new Date(Date.from(zdtStart.toInstant()).getTime());
   }
 
   /**
@@ -90,5 +95,18 @@ public class Helpers {
   public static Date getDateNDaysAgo(int daysAgo) {
     return getStartOfDay(new Date(
         Date.from(Instant.now().minus(Duration.ofDays(daysAgo))).getTime()));
+  }
+
+  public static Date getMostRecentWeekday() {
+    Calendar calendar = Calendar.getInstance();
+    calendar.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+    calendar.setTime(new Date(Instant.now().toEpochMilli()));
+    if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+      return getDateNDaysAgo(2);
+    } else if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
+      return getDateNDaysAgo(1);
+    } else {
+      return getDateNDaysAgo(0);
+    }
   }
 }

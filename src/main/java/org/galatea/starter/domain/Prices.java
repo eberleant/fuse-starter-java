@@ -1,30 +1,35 @@
 package org.galatea.starter.domain;
 
 import java.math.BigDecimal;
+import javax.persistence.Embeddable;
 import javax.validation.constraints.DecimalMin;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE) // For builder
+@NoArgsConstructor(access = AccessLevel.PRIVATE) // JPA
 @Builder
-@Value
+@Data
+@Embeddable
 public class Prices {
   @DecimalMin("0.00")
   @NonNull
-  BigDecimal open;
+  private BigDecimal open;
 
   @DecimalMin("0.00")
   @NonNull
-  BigDecimal high;
+  private BigDecimal high;
 
   @DecimalMin("0.00")
   @NonNull
-  BigDecimal low;
+  private BigDecimal low;
 
   @DecimalMin("0.00")
   @NonNull
-  BigDecimal close;
+  private BigDecimal close;
 }

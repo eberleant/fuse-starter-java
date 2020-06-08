@@ -65,7 +65,7 @@ public class StockPriceController extends BaseRestController {
 
   /**
    * Handle /price route.
-   * @param stock symbol from parameters of /price URL
+   * @param symbol from parameters of /price URL
    * @param days from parameters of /price URL
    * @return StockPrice object
    */
@@ -73,31 +73,26 @@ public class StockPriceController extends BaseRestController {
   @GetMapping(value = "${mvc.getPricePath}", produces = {
       MediaType.APPLICATION_JSON_VALUE})
   public ObjectNode price(
-      @RequestParam(value = "stock", defaultValue = "DNKN") final String stock,
+      @RequestParam(value = "symbol", defaultValue = "DNKN") final String symbol,
       @RequestParam(value = "days", defaultValue = "5") @Min(0) final int days,
       @RequestParam(value = "requestId", required = false) final String requestId) {
     // if an external request id was provided, grab it
     processRequestId(requestId);
     // make db call
-
-    // check if making api call is necessary
-
-    // make api call to AlphaVantage
-    URL requestUrl = new URL(basePath + "/query?function=TIME_SERIES_DAILY"
-        + "&symbol=" + stock
-        + "&outputsize=" + (days > 100 ? "full" : "compact")
-        + "&apikey=" + apiKey);
-    JsonNode avResponseJson = objectMapper.readTree(requestUrl);
-
-    // create array of StockPrice objects from db/api calls
-    List<StockPrice> stockPrices =
-        stockPriceService.findMostRecentStockPrices(days,
-            createStockPrices(avResponseJson.get(dailyTimeSeriesKey), stock));
-
-    // store result of api call in db
-
-    ObjectNode metadata = getMetadata(stock, days);
-    // create and return final json with audit info + StockPrice array
+    List<StockPrice> stockPrices = stockPriceService.findStockPricesBySymbol(symbol);
+    // make api call to AlphaVantage if necessary
+    if (!stockPriceService.hasNecessaryStockPrices(stockPrices, days)) {
+      stockPrices = createStockPrices(symbol,
+          stockPriceService.makeApiCall(objectMapper, apiKey, basePath, symbol,
+          (days > 100 ? "full" : "compact")).get(dailyTimeSeriesKey));
+      // store result of api call in db
+      stockPriceService.saveStockPricesIfNotExists(stockPrices, symbol);
+    }
+    // filter to only necessary stock prices
+    stockPrices = stockPriceService.findMostRecentStockPrices(days, stockPrices);
+    // create metadata object
+    ObjectNode metadata = getMetadata(symbol, days);
+    // create and return final json with metadata + StockPrice array
     ObjectNode rootNode = objectMapper.createObjectNode();
     rootNode.set("metadata", metadata);
     rootNode.set("data", objectMapper.readTree(objectMapper.writeValueAsString(stockPrices)));
@@ -106,24 +101,22 @@ public class StockPriceController extends BaseRestController {
 
   /**
    * Helper method for getting an ObjectNode representing the audit info of the request.
-   * @param stock symbol from params in API request
+   * @param symbol from params in API request
    * @param days from params in API request; represents number of days to retrieve stock info
    * @return
    */
-  private ObjectNode getMetadata(final String stock, final int days) {
+  private ObjectNode getMetadata(final String symbol, final int days) {
     ObjectNode metadata = objectMapper.createObjectNode();
     metadata.put("description", "Daily stock prices (open)"); // should i use open or?
-    metadata.put("stock", stock);
+    metadata.put("stock", symbol);
     metadata.put("days", days);
-    metadata.put("request-date",
-        Helpers.getStartOfDay(new Date(System.currentTimeMillis())).toString());
+    metadata.put("request-date", Helpers.getDateNDaysAgo(0).toString());
     metadata.put("time-zone", "US/Eastern");
     return metadata;
   }
 
   @SneakyThrows
-  private ArrayList<StockPrice> createStockPrices(
-      JsonNode timeSeries, final String stock) {
+  private ArrayList<StockPrice> createStockPrices(final String symbol, JsonNode timeSeries) {
     ArrayList<StockPrice> stockPrices = new ArrayList<>();
     Iterator<Entry<String, JsonNode>> timeSeriesNodes = timeSeries.fields();
     // build a StockPrice object for each entry in timeSeries
@@ -140,7 +133,7 @@ public class StockPriceController extends BaseRestController {
                   .low(new BigDecimal(timeSeriesEntry.getValue().get(lowPriceKey).textValue()))
                   .close(new BigDecimal(timeSeriesEntry.getValue().get(closePriceKey).textValue()))
                   .build())
-              .stock(stock).build());
+              .symbol(symbol).build());
     }
 
     return stockPrices;
