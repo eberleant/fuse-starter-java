@@ -25,12 +25,12 @@ public class StockPriceService {
   @Autowired
   IStockPriceRpsy stockPriceRpsy;
 
-  public List<StockPrice> findMostRecentStockPrices(int days, List<StockPrice> stockPrices) {
-    log.info("Finding {} most recent stock prices", days);
-    return stockPrices.subList(0, Math.min(stockPrices.size(), days));
+  public List<StockPrice> findFirstStockPrices(int num, List<StockPrice> stockPrices) {
+    log.info("Finding {} most recent stock prices", num);
+    return stockPrices.subList(0, Math.min(stockPrices.size(), num));
   }
 
-  public void saveStockPricesIfNotExists(List<StockPrice> stockPrices, String symbol) {
+  public void saveStockPricesIfNotExists(List<StockPrice> stockPrices) {
     log.info("Filtering out StockPrices that are already in the database.");
 //    List<StockPrice> stockPricesToSave = new ArrayList<>(List.copyOf(stockPrices));
 //    stockPricesToSave.removeAll(stockPriceRpsy.findBySymbol(symbol));

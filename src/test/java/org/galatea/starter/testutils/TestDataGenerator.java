@@ -1,9 +1,15 @@
 package org.galatea.starter.testutils;
 
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.util.Calendar;
 import lombok.extern.slf4j.Slf4j;
+import org.galatea.starter.domain.Prices;
 import org.galatea.starter.domain.SettlementMission;
+import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.domain.TradeAgreement;
 import org.galatea.starter.entrypoint.messagecontracts.ProtobufMessages;
+import org.galatea.starter.utils.Helpers;
 
 /**
  * Utility class for generating default domain objects for tests.
@@ -57,5 +63,23 @@ public class TestDataGenerator {
         .direction("REC")
         .qty(100d)
         .version(0L);
+  }
+
+  /**
+   * Generate a StockPrice builder populated with some default test values.
+   */
+  public static StockPrice.StockPriceBuilder defaultStockPriceData() {
+    Calendar calendar = Calendar.getInstance();
+    calendar.set(2020, Calendar.JANUARY, 1, 0, 0, 0);
+    Date date = new Date(calendar.getTimeInMillis());
+    return StockPrice.builder()
+        .id(100L)
+        .symbol("IBM")
+        .date(date)
+        .prices(Prices.builder()
+            .open(new BigDecimal(0))
+            .high(new BigDecimal(0))
+            .low(new BigDecimal(0))
+            .close(new BigDecimal(0)).build());
   }
 }

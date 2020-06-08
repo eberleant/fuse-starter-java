@@ -43,7 +43,9 @@ public class StockPrice {
   private Prices prices;
 
   public boolean equals(StockPrice other) {
-    return this.symbol.equals(other.symbol) && this.date.equals(other.date);
+    return this.symbol.equals(other.symbol)
+        && this.date.equals(other.date)
+        && this.prices.equals(other.prices);
   }
 
 }

@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j // logging
 @Validated // evaluate method parameter constraint annotations
 @RestController // @Controller + @ResponseBody
-public class StockPriceController extends BaseRestController {
+public class StockPriceRestController extends BaseRestController {
 
   @Autowired
   StockPriceService stockPriceService;
@@ -76,10 +76,10 @@ public class StockPriceController extends BaseRestController {
       stockPrices = timeSeriesJsonTranslator.translate(stockPriceService.makeApiCall(
           objectMapper, apiKey, basePath, symbol, (days > 100 ? "full" : "compact")));
       // store result of api call in db
-      stockPriceService.saveStockPricesIfNotExists(stockPrices, symbol);
+      stockPriceService.saveStockPricesIfNotExists(stockPrices);
     }
     // filter to only necessary stock prices
-    stockPrices = stockPriceService.findMostRecentStockPrices(days, stockPrices);
+    stockPrices = stockPriceService.findFirstStockPrices(days, stockPrices);
     // create metadata object
     ObjectNode metadata = getMetadata(symbol, days);
     // create and return final json with metadata + StockPrice array
