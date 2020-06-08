@@ -33,6 +33,8 @@ jms:
    agreement-queue-proto: sandbox.agreement.proto
 alpha-vantage:
    api-key: 2TE9BO3PHOK5W9HH
+   metadata-key: Meta Data
+   symbol-key: 2. Symbol
    daily-time-series-key: Time Series (Daily)
    open-price-key: 1. open
    high-price-key: 2. high

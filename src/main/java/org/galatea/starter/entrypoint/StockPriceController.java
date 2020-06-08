@@ -1,31 +1,19 @@
 package org.galatea.starter.entrypoint;
 
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.Date;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import javax.validation.constraints.Min;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.galatea.starter.domain.Prices;
 import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.service.StockPriceService;
 import org.galatea.starter.utils.Helpers;
+import org.galatea.starter.utils.translation.ITranslator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -41,6 +29,9 @@ public class StockPriceController extends BaseRestController {
 
   @Autowired
   ObjectMapper objectMapper;
+
+  @Autowired
+  ITranslator<JsonNode, List<StockPrice>> timeSeriesJsonTranslator;
 
   @Value("${alpha-vantage.api-key}")
   private String apiKey;
@@ -82,9 +73,8 @@ public class StockPriceController extends BaseRestController {
     List<StockPrice> stockPrices = stockPriceService.findStockPricesBySymbol(symbol);
     // make api call to AlphaVantage if necessary
     if (!stockPriceService.hasNecessaryStockPrices(stockPrices, days)) {
-      stockPrices = createStockPrices(symbol,
-          stockPriceService.makeApiCall(objectMapper, apiKey, basePath, symbol,
-          (days > 100 ? "full" : "compact")).get(dailyTimeSeriesKey));
+      stockPrices = timeSeriesJsonTranslator.translate(stockPriceService.makeApiCall(
+          objectMapper, apiKey, basePath, symbol, (days > 100 ? "full" : "compact")));
       // store result of api call in db
       stockPriceService.saveStockPricesIfNotExists(stockPrices, symbol);
     }
@@ -113,29 +103,5 @@ public class StockPriceController extends BaseRestController {
     metadata.put("request-date", Helpers.getDateNDaysAgo(0).toString());
     metadata.put("time-zone", "US/Eastern");
     return metadata;
-  }
-
-  @SneakyThrows
-  private ArrayList<StockPrice> createStockPrices(final String symbol, JsonNode timeSeries) {
-    ArrayList<StockPrice> stockPrices = new ArrayList<>();
-    Iterator<Entry<String, JsonNode>> timeSeriesNodes = timeSeries.fields();
-    // build a StockPrice object for each entry in timeSeries
-    while (timeSeriesNodes.hasNext()) {
-      Map.Entry<String, JsonNode> timeSeriesEntry = timeSeriesNodes.next();
-      // switch to using custom constructor?
-      // use custom ITranslator??
-      stockPrices.add(
-          StockPrice.builder()
-              .date(Helpers.stringToDate(timeSeriesEntry.getKey()))
-              .prices(Prices.builder()
-                  .open(new BigDecimal(timeSeriesEntry.getValue().get(openPriceKey).textValue()))
-                  .high(new BigDecimal(timeSeriesEntry.getValue().get(highPriceKey).textValue()))
-                  .low(new BigDecimal(timeSeriesEntry.getValue().get(lowPriceKey).textValue()))
-                  .close(new BigDecimal(timeSeriesEntry.getValue().get(closePriceKey).textValue()))
-                  .build())
-              .symbol(symbol).build());
-    }
-
-    return stockPrices;
   }
 }

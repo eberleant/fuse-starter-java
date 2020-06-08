@@ -3,9 +3,13 @@ package org.galatea.starter;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.galatea.starter.domain.Prices;
 import org.galatea.starter.domain.SettlementMission;
 import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.domain.TradeAgreement;
@@ -18,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@Slf4j
 @Configuration
 public class MessageTranslationConfig {
 
@@ -75,31 +80,39 @@ public class MessageTranslationConfig {
   }
 
   /**
-   * Returns a translator to convert a Map.Entry<String, JsonNode> to a StockPrice.
-   * Key: String representation of a date (yyyy-MM-dd).
-   * Value: String representations of the stock prices throughout the day and volume.
-   */
-//  @Bean
-//  public ITranslator<Map.Entry<String, JsonNode>, StockPrice> timeSeriesEntryTranslator() {
-//    return message -> StockPrice.builder()
-//        .date(Helpers.stringToDate(message.getKey()))
-//        .price(new BigDecimal(message.getValue().get(priceKey).textValue()))
-//        .stock(stock).build();
-//  }
-
-  /**
    * Returns a translator to convert a JsonNode from Alpha Vantage's TIME_SERIES_DAILY API call
    * to a list of StockPrices.
    */
-//  @Bean
-//  public ITranslator<JsonNode, List<StockPrice>> timeSeriesJsonTranslator(
-//      final ITranslator<Map.Entry<String, JsonNode>, StockPrice> translator,
-//      @Value("${alpha-vantage.price-key}") String priceKey) {
-//    return messages -> {
-//      // get stock symbol
-//      List<Map.Entry<String, JsonNode>> entryList = new ArrayList<>();
-//      messages.fields().forEachRemaining(entryList::add);
-//      return entryList.stream().map(translator::translate).collect(Collectors.toList());
-//    };
-//  }
+  @Bean
+  public ITranslator<JsonNode, List<StockPrice>> timeSeriesJsonTranslator(
+      @Value("${alpha-vantage.metadata-key}") final String metadataKey,
+      @Value("${alpha-vantage.symbol-key}") final String symbolKey,
+      @Value("${alpha-vantage.daily-time-series-key}") final String timeSeriesKey,
+      @Value("${alpha-vantage.open-price-key}") final String openPriceKey,
+      @Value("${alpha-vantage.high-price-key}") final String highPriceKey,
+      @Value("${alpha-vantage.low-price-key}") final String lowPriceKey,
+      @Value("${alpha-vantage.close-price-key}") final String closePriceKey) {
+    return timeSeriesJson -> {
+      // get stock symbol
+      String symbol = timeSeriesJson.get(metadataKey).get(symbolKey).textValue();
+      List<StockPrice> stockPrices = new ArrayList<>();
+      Iterator<Entry<String, JsonNode>> timeSeriesIter = timeSeriesJson.get(timeSeriesKey).fields();
+      // build a StockPrice object for each entry in timeSeriesIter
+      while (timeSeriesIter.hasNext()) {
+        Map.Entry<String, JsonNode> timeSeriesEntry = timeSeriesIter.next();
+        stockPrices.add(
+            StockPrice.builder()
+                .date(Helpers.stringToDate(timeSeriesEntry.getKey()))
+                .prices(Prices.builder()
+                    .open(new BigDecimal(timeSeriesEntry.getValue().get(openPriceKey).textValue()))
+                    .high(new BigDecimal(timeSeriesEntry.getValue().get(highPriceKey).textValue()))
+                    .low(new BigDecimal(timeSeriesEntry.getValue().get(lowPriceKey).textValue()))
+                    .close(new BigDecimal(timeSeriesEntry.getValue().get(closePriceKey).textValue()))
+                    .build())
+                .symbol(symbol).build());
+      }
+      log.info("Translated JsonNode into {} StockPrices, symbol {}", stockPrices.size(), symbol);
+      return stockPrices;
+    };
+  }
 }
