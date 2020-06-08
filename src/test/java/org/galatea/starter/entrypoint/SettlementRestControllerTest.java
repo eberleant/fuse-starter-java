@@ -51,6 +51,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnNotWebApplication;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
@@ -69,7 +70,10 @@ import org.springframework.web.accept.ContentNegotiationManager;
 import org.springframework.web.accept.ParameterContentNegotiationStrategy;
 
 @Slf4j
-@Import({MessageTranslationConfig.class})
+// Otherwise, @Value injections in MessageTranslationConfig can't be resolved?
+// https://docs.spring.io/spring-boot/docs/2.1.6.RELEASE/reference/html/boot-features-testing.html
+@SpringBootTest
+@Import({MessageTranslationConfig.class, SettlementRestController.class})
 @RunWith(JUnitParamsRunner.class)
 public class SettlementRestControllerTest
     extends ASpringTest {
