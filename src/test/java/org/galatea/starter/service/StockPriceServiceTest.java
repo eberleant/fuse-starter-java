@@ -50,24 +50,6 @@ public class StockPriceServiceTest extends ASpringTest {
   @Value("${alpha-vantage.basePath}")
   private String basePath;
 
-  /** Helper method to generate a given number of StockPrice objects with the given symbol.
-   * @param symbol for each StockPrice
-   * @param num size of the resulting list of StockPrices
-   * @return
-   */
-  private List<StockPrice> generateStockPrices(String symbol, int num) {
-    Random rand = new Random();
-    List<StockPrice> stockPrices = new ArrayList<>();
-    for (int i = 0; i < num; i++) {
-      stockPrices.add(StockPrice.builder()
-          .date(new Date(rand.nextInt(1000)))
-          .prices(TestDataGenerator.defaultPricesData().build())
-          .symbol(symbol)
-          .id((long) i).build());
-    }
-    return stockPrices;
-  }
-
   /**
    * Test that StockPriceService.findStockPricesBySymbol returns list of StockPrices found by
    * repository.
@@ -110,7 +92,7 @@ public class StockPriceServiceTest extends ASpringTest {
   public void testFindStockPricesBySymbolMaintainsOrder() {
     String symbol = "IBM";
     // generate 5 StockPrices
-    List<StockPrice> stockPrices = generateStockPrices(symbol, 5);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices(symbol, 5);
     Collections.shuffle(stockPrices);
 
     BDDMockito.given(this.mockStockPriceRpsy.findBySymbolIgnoreCaseOrderByDateDesc(symbol))
@@ -127,9 +109,9 @@ public class StockPriceServiceTest extends ASpringTest {
   @Test
   public void testFindFirstStockPricesSize() {
     // generate 10 StockPrices
-    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
 
-    List<StockPrice> retrieved = service.findFirstStockPrices(5, stockPrices);
+    List<StockPrice> retrieved = service.findFirstStockPrices(stockPrices, 5);
     assertTrue(retrieved.size() == 5);
   }
 
@@ -139,9 +121,9 @@ public class StockPriceServiceTest extends ASpringTest {
   @Test
   public void testFindFirstStockPricesWithSmallList() {
     // generate 10 StockPrices
-    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
 
-    List<StockPrice> retrieved = service.findFirstStockPrices(5, stockPrices);
+    List<StockPrice> retrieved = service.findFirstStockPrices(stockPrices, 5);
     assertTrue(retrieved.size() == 5);
   }
 
@@ -151,9 +133,9 @@ public class StockPriceServiceTest extends ASpringTest {
   @Test
   public void testFindFirstStockPricesZero() {
     // generate 10 StockPrices
-    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
 
-    List<StockPrice> retrieved = service.findFirstStockPrices(0, stockPrices);
+    List<StockPrice> retrieved = service.findFirstStockPrices(stockPrices, 0);
     assertTrue(retrieved.isEmpty());
   }
 
@@ -164,7 +146,7 @@ public class StockPriceServiceTest extends ASpringTest {
   public void testFindFirstStockPricesEmptyList() {
     List<StockPrice> stockPrices = new ArrayList<>();
 
-    List<StockPrice> retrieved = service.findFirstStockPrices(10, stockPrices);
+    List<StockPrice> retrieved = service.findFirstStockPrices(stockPrices, 10);
     assertTrue(retrieved.isEmpty());
   }
 
@@ -188,7 +170,7 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testSaveStockPricesIfNotExistsSavesWhenNotExists() {
-    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.sort(Comparator.comparing(StockPrice::getId));
 
     BDDMockito.given(this.mockStockPriceRpsy.findBySymbolIgnoreCaseAndDate(anyString(), any()))
@@ -204,7 +186,7 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testSaveStockPricesIfNotExistsDoesNotSaveWhenExists() {
-    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
 
     BDDMockito.given(this.mockStockPriceRpsy.findBySymbolIgnoreCaseAndDate(any(), any()))
         .willReturn(Collections.singletonList(stockPrices.get(0)));
@@ -218,7 +200,7 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testHasNecessaryStockPricesZeroDays() {
-    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     assertTrue(service.hasNecessaryStockPrices(stockPrices, 0));
   }
 
@@ -246,7 +228,7 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testHasNecessaryStockPricesNotUpToDate() {
-    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
         .date(new Date(0))
         .prices(TestDataGenerator.defaultPricesData().build())
@@ -260,7 +242,7 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testHasNecessaryStockPricesNotEnoughHistory() {
-    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
         .date(Helpers.getMostRecentWeekday())
         .prices(TestDataGenerator.defaultPricesData().build())
@@ -274,7 +256,7 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testHasNecessaryStockPricesEqualSize() {
-    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
         .date(Helpers.getMostRecentWeekday())
         .prices(TestDataGenerator.defaultPricesData().build())
@@ -288,7 +270,7 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testHasNecessaryStockPricesGreaterSize() {
-    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
         .date(Helpers.getMostRecentWeekday())
         .prices(TestDataGenerator.defaultPricesData().build())

@@ -94,7 +94,7 @@ public class MessageTranslationConfig {
       @Value("${alpha-vantage.close-price-key}") final String closePriceKey) {
     return timeSeriesJson -> {
       // get stock symbol
-      String symbol = timeSeriesJson.get(metadataKey).get(symbolKey).textValue();
+      String symbol = timeSeriesJson.get(metadataKey).get(symbolKey).textValue().toUpperCase();
       List<StockPrice> stockPrices = new ArrayList<>();
       Iterator<Entry<String, JsonNode>> timeSeriesIter = timeSeriesJson.get(timeSeriesKey).fields();
       // build a StockPrice object for each entry in timeSeriesIter

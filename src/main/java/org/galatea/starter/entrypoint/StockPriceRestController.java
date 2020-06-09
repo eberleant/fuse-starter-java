@@ -3,16 +3,23 @@ package org.galatea.starter.entrypoint;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
 import javax.validation.constraints.Min;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.domain.StockPrice;
+import org.galatea.starter.entrypoint.exception.DataNotFoundException;
+import org.galatea.starter.entrypoint.exception.EntityNotFoundException;
 import org.galatea.starter.service.StockPriceService;
 import org.galatea.starter.utils.Helpers;
 import org.galatea.starter.utils.translation.ITranslator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,6 +46,9 @@ public class StockPriceRestController extends BaseRestController {
   @Value("${alpha-vantage.basePath}")
   private String basePath;
 
+  @Value("${alpha-vantage.metadata-key}")
+  private String metadataKey;
+
   @Value("${alpha-vantage.daily-time-series-key}")
   private String dailyTimeSeriesKey;
 
@@ -64,24 +74,37 @@ public class StockPriceRestController extends BaseRestController {
   @GetMapping(value = "${mvc.getPricePath}", produces = {
       MediaType.APPLICATION_JSON_VALUE})
   public ObjectNode price(
-      @RequestParam(value = "symbol", defaultValue = "DNKN") final String symbol,
-      @RequestParam(value = "days", defaultValue = "5") @Min(0) final int days,
+      @RequestParam(value = "symbol") final String symbol,
+      @RequestParam(value = "days", defaultValue = "20") @Min(value = 0,
+          message = "Days must be greater than or equal to 0") final int days,
       @RequestParam(value = "requestId", required = false) final String requestId) {
+
     // if an external request id was provided, grab it
     processRequestId(requestId);
+
     // make db call
     List<StockPrice> stockPrices = stockPriceService.findStockPricesBySymbol(symbol);
+
     // make api call to AlphaVantage if necessary
     if (!stockPriceService.hasNecessaryStockPrices(stockPrices, days)) {
-      stockPrices = timeSeriesJsonTranslator.translate(stockPriceService.makeApiCall(
-          objectMapper, apiKey, basePath, symbol, (days > 100 ? "full" : "compact")));
+      JsonNode result = stockPriceService.makeApiCall(objectMapper, apiKey, basePath, symbol,
+          (days > 100 ? "full" : "compact"));
+      // throw exception if result is an error
+      if (isAlphaVantageError(result)) {
+        throw new DataNotFoundException(symbol);
+      }
+      stockPrices = timeSeriesJsonTranslator.translate(result);
+      Set<ConstraintViolation<?>> violations = new HashSet<>();
       // store result of api call in db
       stockPriceService.saveStockPricesIfNotExists(stockPrices);
     }
+
     // filter to only necessary stock prices
-    stockPrices = stockPriceService.findFirstStockPrices(days, stockPrices);
+    stockPrices = stockPriceService.findFirstStockPrices(stockPrices, days);
+
     // create metadata object
     ObjectNode metadata = getMetadata(symbol, days);
+
     // create and return final json with metadata + StockPrice array
     ObjectNode rootNode = objectMapper.createObjectNode();
     rootNode.set("metadata", metadata);
@@ -98,10 +121,20 @@ public class StockPriceRestController extends BaseRestController {
   private ObjectNode getMetadata(final String symbol, final int days) {
     ObjectNode metadata = objectMapper.createObjectNode();
     metadata.put("description", "Daily stock prices (open)"); // should i use open or?
-    metadata.put("stock", symbol);
+    metadata.put("symbol", symbol);
     metadata.put("days", days);
     metadata.put("request-date", Helpers.getDateNDaysAgo(0).toString());
     metadata.put("time-zone", "US/Eastern");
     return metadata;
+  }
+
+  /**
+   * Helper method for checking if API response represents an error from Alpha Vantage.
+   * @param response API response from Alpha Vantage, as JsonNode
+   * @return
+   */
+  private boolean isAlphaVantageError(JsonNode response) {
+    return response.get("Error Message") != null
+        || (response.get(metadataKey) == null && response.get(dailyTimeSeriesKey) == null);
   }
 }

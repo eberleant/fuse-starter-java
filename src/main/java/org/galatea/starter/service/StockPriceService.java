@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.validation.Validator;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ public class StockPriceService {
   @Autowired
   IStockPriceRpsy stockPriceRpsy;
 
-  public List<StockPrice> findFirstStockPrices(int num, List<StockPrice> stockPrices) {
+  public List<StockPrice> findFirstStockPrices(List<StockPrice> stockPrices, int num) {
     log.info("Finding {} most recent stock prices", num);
     return stockPrices.subList(0, Math.min(stockPrices.size(), num));
   }
@@ -64,7 +65,7 @@ public class StockPriceService {
       Date mostRecentWeekday = Helpers.getMostRecentWeekday();
       log.info("Most recent stock price: {}", mostRecentStockPrice);
       log.info("Most recent weekday: {}", mostRecentWeekday);
-      return mostRecentStockPrice.equals(mostRecentWeekday) && stockPrices.size() >= days;
+      return !mostRecentWeekday.after(mostRecentStockPrice) && stockPrices.size() >= days;
     }
   }
 
