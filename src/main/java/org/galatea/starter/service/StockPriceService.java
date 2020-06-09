@@ -30,7 +30,7 @@ public class StockPriceService {
     return stockPrices.subList(0, Math.min(stockPrices.size(), num));
   }
 
-  public void saveStockPricesIfNotExists(List<StockPrice> stockPrices) {
+  public List<StockPrice> saveStockPricesIfNotExists(List<StockPrice> stockPrices) {
     log.info("Filtering out StockPrices that are already in the database.");
 //    List<StockPrice> stockPricesToSave = new ArrayList<>(List.copyOf(stockPrices));
 //    stockPricesToSave.removeAll(stockPriceRpsy.findBySymbol(symbol));
@@ -41,6 +41,7 @@ public class StockPriceService {
     stockPriceRpsy.saveAll(stockPricesToSave);
     log.info("Finished.");
 //    stockPricesToSave.forEach(sp -> log.info(sp.toString()));
+    return stockPricesToSave;
   }
 
   public List<StockPrice> findStockPricesBySymbol(final String symbol) {

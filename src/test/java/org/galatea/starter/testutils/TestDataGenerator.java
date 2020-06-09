@@ -76,10 +76,17 @@ public class TestDataGenerator {
         .id(100L)
         .symbol("IBM")
         .date(date)
-        .prices(Prices.builder()
-            .open(new BigDecimal(0))
-            .high(new BigDecimal(0))
-            .low(new BigDecimal(0))
-            .close(new BigDecimal(0)).build());
+        .prices(defaultPricesData().build());
+  }
+
+  /**
+   * Generate a Prices builder with some default test values.
+   */
+  public static Prices.PricesBuilder defaultPricesData() {
+    return Prices.builder()
+        .open(new BigDecimal(0))
+        .high(new BigDecimal(0))
+        .low(new BigDecimal(0))
+        .close(new BigDecimal(0));
   }
 }

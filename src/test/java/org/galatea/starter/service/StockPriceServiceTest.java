@@ -1,18 +1,42 @@
 package org.galatea.starter.service;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.sql.Date;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import org.galatea.starter.ASpringTest;
 import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.domain.rpsy.IStockPriceRpsy;
 import org.galatea.starter.testutils.TestDataGenerator;
+import org.galatea.starter.utils.Helpers;
 import org.junit.Test;
+import org.mockito.BDDMockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
+import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 
+// from https://stackoverflow.com/questions/21271468/spring-propertysource-using-yaml
+// why does it work?
+@TestPropertySource("classpath:application.yml")
+@ContextConfiguration(initializers = {ConfigFileApplicationContextInitializer.class})
+@Import({StockPriceService.class})
 public class StockPriceServiceTest extends ASpringTest {
   @MockBean
   private IStockPriceRpsy mockStockPriceRpsy;
@@ -20,28 +44,80 @@ public class StockPriceServiceTest extends ASpringTest {
   @Autowired // may remove annotation and set value in @Before method, see SettlementService.java
   private StockPriceService service;
 
+  @Value("${alpha-vantage.api-key}")
+  private String apiKey;
+
+  @Value("${alpha-vantage.basePath}")
+  private String basePath;
+
+  /** Helper method to generate a given number of StockPrice objects with the given symbol.
+   * @param symbol for each StockPrice
+   * @param num size of the resulting list of StockPrices
+   * @return
+   */
+  private List<StockPrice> generateStockPrices(String symbol, int num) {
+    Random rand = new Random();
+    List<StockPrice> stockPrices = new ArrayList<>();
+    for (int i = 0; i < num; i++) {
+      stockPrices.add(StockPrice.builder()
+          .date(new Date(rand.nextInt(1000)))
+          .prices(TestDataGenerator.defaultPricesData().build())
+          .symbol(symbol)
+          .id((long) i).build());
+    }
+    return stockPrices;
+  }
+
   /**
-   * Test that StockPriceService.findStockPrice returns list of StockPrices found by repository
+   * Test that StockPriceService.findStockPricesBySymbol returns list of StockPrices found by
+   * repository.
    */
   @Test
-  public void testFindStockPriceFindBySymbolFound() {
+  public void testFindStockPricesSymbolFound() {
     String symbol = "IBM";
 
     StockPrice testStockPrice = TestDataGenerator.defaultStockPriceData().build();
 
-    given(this.mockStockPriceRpsy.findBySymbolOrderByDateDesc(symbol))
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolOrderByDateDesc(symbol))
         .willReturn(Collections.singletonList(testStockPrice));
 
     List<StockPrice> retrieved = service.findStockPricesBySymbol("IBM");
-    assertTrue(retrieved.size() == 1);
+    assertTrue(retrieved.size() == 1 && retrieved.get(0).equals(testStockPrice));
   }
 
   /**
-   * Test that StockPriceService.findStockPrice returns empty list when not found by repository
+   * Test that StockPriceService.findStockPricesBySymbol returns empty list when all StockPrices in
+   * database have a different symbol.
    */
   @Test
-  public void testFindStockPriceFindBySymbolNotFound() {
+  public void testFindStockPricesBySymbolNotFound() {
+    String symbol = "IBM";
 
+    StockPrice testStockPrice = TestDataGenerator.defaultStockPriceData().build();
+
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolOrderByDateDesc(symbol))
+        .willReturn(Collections.singletonList(testStockPrice));
+
+    List<StockPrice> retrieved = service.findStockPricesBySymbol("DNKN"); // different symbol
+    assertTrue(retrieved.isEmpty());
+  }
+
+  /**
+   * Test that StockPriceService.findStockPricesBySymbol returns the list in the same order as the
+   * list given by the repository.
+   */
+  @Test
+  public void testFindStockPricesBySymbolMaintainsOrder() {
+    String symbol = "IBM";
+    // generate 5 StockPrices
+    List<StockPrice> stockPrices = generateStockPrices(symbol, 5);
+    Collections.shuffle(stockPrices);
+
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolOrderByDateDesc(symbol))
+        .willReturn(stockPrices);
+
+    List<StockPrice> retrieved = service.findStockPricesBySymbol(symbol);
+    assertTrue(retrieved.equals(stockPrices));
   }
 
   /**
@@ -50,16 +126,23 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testFindFirstStockPricesSize() {
+    // generate 10 StockPrices
+    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
 
+    List<StockPrice> retrieved = service.findFirstStockPrices(5, stockPrices);
+    assertTrue(retrieved.size() == 5);
   }
 
   /**
-   * Test that StockPriceService.findFirstStockPrices returns min(num, list.size) number of elements
-   * when given list is too small.
+   * Test that StockPriceService.findFirstStockPrices returns entire list when list.size < num.
    */
   @Test
-  public void testFindFirstStockPricesMinSize() {
+  public void testFindFirstStockPricesWithSmallList() {
+    // generate 10 StockPrices
+    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
 
+    List<StockPrice> retrieved = service.findFirstStockPrices(5, stockPrices);
+    assertTrue(retrieved.size() == 5);
   }
 
   /**
@@ -67,7 +150,11 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testFindFirstStockPricesZero() {
+    // generate 10 StockPrices
+    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
 
+    List<StockPrice> retrieved = service.findFirstStockPrices(0, stockPrices);
+    assertTrue(retrieved.isEmpty());
   }
 
   /**
@@ -75,7 +162,10 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testFindFirstStockPricesEmptyList() {
+    List<StockPrice> stockPrices = new ArrayList<>();
 
+    List<StockPrice> retrieved = service.findFirstStockPrices(10, stockPrices);
+    assertTrue(retrieved.isEmpty());
   }
 
   /**
@@ -84,7 +174,13 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testSaveStockPricesIfNotExistsEmptyList() {
+    List<StockPrice> stockPrices = new ArrayList<>();
 
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolAndDate(anyString(), any()))
+        .willReturn(new ArrayList<>());
+
+    List<StockPrice> saved = service.saveStockPricesIfNotExists(stockPrices);
+    assertTrue(saved.isEmpty());
   }
 
   /**
@@ -92,7 +188,15 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testSaveStockPricesIfNotExistsSavesWhenNotExists() {
+    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    stockPrices.sort(Comparator.comparing(StockPrice::getId));
 
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolAndDate(anyString(), any()))
+        .willReturn(new ArrayList<>());
+
+    List<StockPrice> saved = service.saveStockPricesIfNotExists(stockPrices);
+    saved.sort(Comparator.comparing(StockPrice::getId));
+    assertTrue(saved.equals(stockPrices));
   }
 
   /**
@@ -100,7 +204,13 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testSaveStockPricesIfNotExistsDoesNotSaveWhenExists() {
+    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
 
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolAndDate(any(), any()))
+        .willReturn(Collections.singletonList(stockPrices.get(0)));
+
+    List<StockPrice> saved = service.saveStockPricesIfNotExists(stockPrices);
+    assertTrue(saved.isEmpty());
   }
 
   /**
@@ -108,7 +218,8 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testHasNecessaryStockPricesZeroDays() {
-
+    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    assertTrue(service.hasNecessaryStockPrices(stockPrices, 0));
   }
 
   /**
@@ -116,7 +227,8 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testHasNecessaryStockPricesZeroDaysAndEmptyList() {
-
+    List<StockPrice> stockPrices = new ArrayList<>();
+    assertTrue(service.hasNecessaryStockPrices(stockPrices, 0));
   }
 
   /**
@@ -124,16 +236,22 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testHasNecessaryStockPricesEmptyList() {
-
+    List<StockPrice> stockPrices = new ArrayList<>();
+    assertFalse(service.hasNecessaryStockPrices(stockPrices, 5));
   }
 
   /**
-   * Test that StockPriceService.hasNecessaryStockPrices returns false when most recent StockPrice
+   * Test that StockPriceService.hasNecessaryStockPrices returns false when first StockPrice
    * has date before most recent weekday.
    */
   @Test
   public void testHasNecessaryStockPricesNotUpToDate() {
-
+    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    stockPrices.set(0, StockPrice.builder()
+        .date(new Date(0))
+        .prices(TestDataGenerator.defaultPricesData().build())
+        .symbol("IBM").build());
+    assertFalse(service.hasNecessaryStockPrices(stockPrices, 5));
   }
 
   /**
@@ -142,14 +260,58 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testHasNecessaryStockPricesNotEnoughHistory() {
-
+    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    stockPrices.set(0, StockPrice.builder()
+        .date(Helpers.getMostRecentWeekday())
+        .prices(TestDataGenerator.defaultPricesData().build())
+        .symbol("IBM").build());
+    assertFalse(service.hasNecessaryStockPrices(stockPrices, 15));
   }
 
   /**
-   * Test that StockPriceService.makeApiCall returns non-null JsonNode.
+   * StockPriceService.hasNecessaryStockPrices returns true when most recent StockPrice has
+   * date = most recent weekday and list.size == days.
    */
   @Test
-  public void testMakeApiCallReturnsNonNullJsonNode() {
+  public void testHasNecessaryStockPricesEqualSize() {
+    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    stockPrices.set(0, StockPrice.builder()
+        .date(Helpers.getMostRecentWeekday())
+        .prices(TestDataGenerator.defaultPricesData().build())
+        .symbol("IBM").build());
+    assertTrue(service.hasNecessaryStockPrices(stockPrices, 10));
+  }
 
+  /**
+   * StockPriceService.hasNecessaryStockPrices returns true when most recent StockPrice has
+   * date = most recent weekday and list.size > days.
+   */
+  @Test
+  public void testHasNecessaryStockPricesGreaterSize() {
+    List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
+    stockPrices.set(0, StockPrice.builder()
+        .date(Helpers.getMostRecentWeekday())
+        .prices(TestDataGenerator.defaultPricesData().build())
+        .symbol("IBM").build());
+    assertTrue(service.hasNecessaryStockPrices(stockPrices, 5));
+  }
+
+  /**
+   * Test that StockPriceService.makeApiCall returns non-empty JsonNode.
+   */
+  @Test
+  public void testMakeApiCallReturnsNonEmptyJsonNode() {
+    JsonNode jsonNode = service.makeApiCall(
+        new ObjectMapper(), apiKey, basePath, "IBM", "compact");
+    assertTrue(jsonNode.fields().hasNext());
+  }
+
+  @Configuration
+  static class TestConfig {
+
+    @Bean
+    PropertySourcesPlaceholderConfigurer propertiesResolver() {
+      return new PropertySourcesPlaceholderConfigurer();
+    }
   }
 }
