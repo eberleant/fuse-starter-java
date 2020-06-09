@@ -8,7 +8,12 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.validation.Valid;
 import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Past;
+import javax.validation.constraints.PastOrPresent;
+import javax.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,6 +37,9 @@ public class StockPrice {
   @GeneratedValue(strategy = GenerationType.AUTO)
   private Long id;
 
+  @NotEmpty(message = "Symbol must not be empty")
+  @Pattern(regexp = "[A-Z0-9]*",
+      message = "Symbol must consist of only uppercase letters and numbers")
   @NonNull
   private String symbol;
 
@@ -39,6 +47,7 @@ public class StockPrice {
   private Date date;
 
   @NonNull
+  @Valid
   @Embedded
   private Prices prices;
 

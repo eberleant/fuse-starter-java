@@ -78,7 +78,7 @@ public class StockPriceServiceTest extends ASpringTest {
 
     StockPrice testStockPrice = TestDataGenerator.defaultStockPriceData().build();
 
-    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolOrderByDateDesc(symbol))
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolIgnoreCaseOrderByDateDesc(symbol))
         .willReturn(Collections.singletonList(testStockPrice));
 
     List<StockPrice> retrieved = service.findStockPricesBySymbol("IBM");
@@ -95,7 +95,7 @@ public class StockPriceServiceTest extends ASpringTest {
 
     StockPrice testStockPrice = TestDataGenerator.defaultStockPriceData().build();
 
-    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolOrderByDateDesc(symbol))
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolIgnoreCaseOrderByDateDesc(symbol))
         .willReturn(Collections.singletonList(testStockPrice));
 
     List<StockPrice> retrieved = service.findStockPricesBySymbol("DNKN"); // different symbol
@@ -113,7 +113,7 @@ public class StockPriceServiceTest extends ASpringTest {
     List<StockPrice> stockPrices = generateStockPrices(symbol, 5);
     Collections.shuffle(stockPrices);
 
-    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolOrderByDateDesc(symbol))
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolIgnoreCaseOrderByDateDesc(symbol))
         .willReturn(stockPrices);
 
     List<StockPrice> retrieved = service.findStockPricesBySymbol(symbol);
@@ -176,7 +176,7 @@ public class StockPriceServiceTest extends ASpringTest {
   public void testSaveStockPricesIfNotExistsEmptyList() {
     List<StockPrice> stockPrices = new ArrayList<>();
 
-    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolAndDate(anyString(), any()))
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolIgnoreCaseAndDate(anyString(), any()))
         .willReturn(new ArrayList<>());
 
     List<StockPrice> saved = service.saveStockPricesIfNotExists(stockPrices);
@@ -191,7 +191,7 @@ public class StockPriceServiceTest extends ASpringTest {
     List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
     stockPrices.sort(Comparator.comparing(StockPrice::getId));
 
-    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolAndDate(anyString(), any()))
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolIgnoreCaseAndDate(anyString(), any()))
         .willReturn(new ArrayList<>());
 
     List<StockPrice> saved = service.saveStockPricesIfNotExists(stockPrices);
@@ -206,7 +206,7 @@ public class StockPriceServiceTest extends ASpringTest {
   public void testSaveStockPricesIfNotExistsDoesNotSaveWhenExists() {
     List<StockPrice> stockPrices = generateStockPrices("IBM", 10);
 
-    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolAndDate(any(), any()))
+    BDDMockito.given(this.mockStockPriceRpsy.findBySymbolIgnoreCaseAndDate(any(), any()))
         .willReturn(Collections.singletonList(stockPrices.get(0)));
 
     List<StockPrice> saved = service.saveStockPricesIfNotExists(stockPrices);

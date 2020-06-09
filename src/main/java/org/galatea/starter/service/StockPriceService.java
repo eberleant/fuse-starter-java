@@ -35,7 +35,7 @@ public class StockPriceService {
 //    List<StockPrice> stockPricesToSave = new ArrayList<>(List.copyOf(stockPrices));
 //    stockPricesToSave.removeAll(stockPriceRpsy.findBySymbol(symbol));
     List<StockPrice> stockPricesToSave = stockPrices.stream().filter(sp ->
-        stockPriceRpsy.findBySymbolAndDate(sp.getSymbol(), sp.getDate()).isEmpty())
+        stockPriceRpsy.findBySymbolIgnoreCaseAndDate(sp.getSymbol(), sp.getDate()).isEmpty())
         .collect(Collectors.toList());
     log.info("Saving filtered StockPrices.");
     stockPriceRpsy.saveAll(stockPricesToSave);
@@ -46,7 +46,7 @@ public class StockPriceService {
 
   public List<StockPrice> findStockPricesBySymbol(final String symbol) {
     log.info("Retrieving StockPrices with symbol {}", symbol);
-    List<StockPrice> found = stockPriceRpsy.findBySymbolOrderByDateDesc(symbol);
+    List<StockPrice> found = stockPriceRpsy.findBySymbolIgnoreCaseOrderByDateDesc(symbol);
     log.info("Finished.");
 //    found.forEach(sp -> log.info(sp.toString()));
     return found;

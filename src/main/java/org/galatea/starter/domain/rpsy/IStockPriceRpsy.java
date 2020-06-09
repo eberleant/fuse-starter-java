@@ -7,8 +7,7 @@ import org.galatea.starter.domain.StockPrice;
 import org.springframework.data.repository.CrudRepository;
 
 public interface IStockPriceRpsy extends CrudRepository<StockPrice, Long> {
-  List<StockPrice> findBySymbol(String symbol);
-  List<StockPrice> findBySymbolAndDate(String symbol, Date date);
-  List<StockPrice> findBySymbolOrderByDateDesc(String symbol);
+  List<StockPrice> findBySymbolIgnoreCaseAndDate(String symbol, Date date);
+  List<StockPrice> findBySymbolIgnoreCaseOrderByDateDesc(String symbol);
   Optional<StockPrice> findById(long id);
 }

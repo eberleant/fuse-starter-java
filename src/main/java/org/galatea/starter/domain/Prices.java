@@ -17,19 +17,19 @@ import lombok.Value;
 @Data
 @Embeddable
 public class Prices {
-  @DecimalMin("0.00")
+  @DecimalMin(value = "0.00", message = "Open price must be greater than or equal to 0.00")
   @NonNull
   private BigDecimal open;
 
-  @DecimalMin("0.00")
+  @DecimalMin(value = "0.00", message = "High price must be greater than or equal to 0.00")
   @NonNull
   private BigDecimal high;
 
-  @DecimalMin("0.00")
+  @DecimalMin(value = "0.00", message = "Low price must be greater than or equal to 0.00")
   @NonNull
   private BigDecimal low;
 
-  @DecimalMin("0.00")
+  @DecimalMin(value = "0.00", message = "Close price must be greater than or equal to 0.00")
   @NonNull
   private BigDecimal close;
 }
