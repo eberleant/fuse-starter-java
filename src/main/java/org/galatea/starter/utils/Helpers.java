@@ -98,15 +98,27 @@ public class Helpers {
   }
 
   public static Date getMostRecentWeekday() {
-    Calendar calendar = Calendar.getInstance();
-    calendar.setTimeZone(TimeZone.getTimeZone("America/New_York"));
-    calendar.setTime(new Date(Instant.now().toEpochMilli()));
-    if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
-      return getDateNDaysAgo(2);
-    } else if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
-      return getDateNDaysAgo(1);
+    Calendar endOfWorkday = Calendar.getInstance();
+    endOfWorkday.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+    endOfWorkday.setTime(getDateNDaysAgo(0));
+    endOfWorkday.set(Calendar.HOUR_OF_DAY, 17); // 5PM
+
+    Calendar currentDate = Calendar.getInstance();
+    currentDate.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+    currentDate.setTime(new Date(Instant.now().toEpochMilli())); // current time
+
+    int offset = 0;
+    if (currentDate.before(endOfWorkday)) { // if current time before 5PM, treat as yesterday
+      currentDate.setTime(getDateNDaysAgo(1));
+      offset++;
+    }
+
+    if (currentDate.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+      return getDateNDaysAgo(2 + offset);
+    } else if (currentDate.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
+      return getDateNDaysAgo(1 + offset);
     } else {
-      return getDateNDaysAgo(0);
+      return getDateNDaysAgo(offset);
     }
   }
 }
