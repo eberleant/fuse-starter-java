@@ -66,7 +66,7 @@ public class Helpers {
     Calendar calendar = Calendar.getInstance();
     calendar.setTimeZone(TimeZone.getTimeZone("America/New_York"));
     calendar.set(year, month, day, 0, 0, 0);
-    return new Date(calendar.getTimeInMillis());
+    return getStartOfDay(new Date(calendar.getTimeInMillis()));
   }
 
   /**

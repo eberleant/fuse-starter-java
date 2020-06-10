@@ -1,24 +1,19 @@
 package org.galatea.starter;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.galatea.starter.domain.Prices;
+import org.galatea.starter.domain.StockPriceInfo;
 import org.galatea.starter.domain.SettlementMission;
 import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.domain.TradeAgreement;
 import org.galatea.starter.entrypoint.messagecontracts.SettlementMissionMessage;
+import org.galatea.starter.entrypoint.messagecontracts.StockPriceInfoMessage;
+import org.galatea.starter.entrypoint.messagecontracts.StockPriceMessage;
+import org.galatea.starter.entrypoint.messagecontracts.StockPriceMessages;
 import org.galatea.starter.entrypoint.messagecontracts.TradeAgreementMessage;
 import org.galatea.starter.entrypoint.messagecontracts.TradeAgreementMessages;
-import org.galatea.starter.utils.Helpers;
 import org.galatea.starter.utils.translation.ITranslator;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -80,39 +75,38 @@ public class MessageTranslationConfig {
   }
 
   /**
-   * Returns a translator to convert a JsonNode from Alpha Vantage's TIME_SERIES_DAILY API call
-   * to a list of StockPrices.
+   * Returns a translator to convert a StockInfoMessage to a Prices object.
    */
   @Bean
-  public ITranslator<JsonNode, List<StockPrice>> timeSeriesJsonTranslator(
-      @Value("${alpha-vantage.metadata-key}") final String metadataKey,
-      @Value("${alpha-vantage.symbol-key}") final String symbolKey,
-      @Value("${alpha-vantage.daily-time-series-key}") final String timeSeriesKey,
-      @Value("${alpha-vantage.open-price-key}") final String openPriceKey,
-      @Value("${alpha-vantage.high-price-key}") final String highPriceKey,
-      @Value("${alpha-vantage.low-price-key}") final String lowPriceKey,
-      @Value("${alpha-vantage.close-price-key}") final String closePriceKey) {
-    return timeSeriesJson -> {
-      // get stock symbol
-      String symbol = timeSeriesJson.get(metadataKey).get(symbolKey).textValue().toUpperCase();
-      List<StockPrice> stockPrices = new ArrayList<>();
-      Iterator<Entry<String, JsonNode>> timeSeriesIter = timeSeriesJson.get(timeSeriesKey).fields();
-      // build a StockPrice object for each entry in timeSeriesIter
-      while (timeSeriesIter.hasNext()) {
-        Map.Entry<String, JsonNode> timeSeriesEntry = timeSeriesIter.next();
-        stockPrices.add(
-            StockPrice.builder()
-                .date(Helpers.stringToDate(timeSeriesEntry.getKey()))
-                .prices(Prices.builder()
-                    .open(new BigDecimal(timeSeriesEntry.getValue().get(openPriceKey).textValue()))
-                    .high(new BigDecimal(timeSeriesEntry.getValue().get(highPriceKey).textValue()))
-                    .low(new BigDecimal(timeSeriesEntry.getValue().get(lowPriceKey).textValue()))
-                    .close(new BigDecimal(timeSeriesEntry.getValue().get(closePriceKey).textValue()))
-                    .build())
-                .symbol(symbol).build());
-      }
-      log.info("Translated JsonNode into {} StockPrices, symbol {}", stockPrices.size(), symbol);
-      return stockPrices;
-    };
+  public ITranslator<StockPriceInfoMessage, StockPriceInfo> stockPriceInfoMessageTranslator() {
+    return message -> StockPriceInfo.builder()
+        .open(message.getOpen())
+        .high(message.getHigh())
+        .low(message.getLow())
+        .close(message.getClose()).build();
+  }
+
+  /**
+   * Returns a translator to convert a StockMessage to a StockPrice.
+   */
+  @Bean
+  public ITranslator<StockPriceMessage, StockPrice> stockPriceMessageTranslator(
+      final ITranslator<StockPriceInfoMessage, StockPriceInfo> translator
+  ) {
+    return message -> StockPrice.builder()
+        .symbol(message.getSymbol())
+        .date(message.getDate())
+        .prices(translator.translate(message.getStockInfo()))
+        .build();
+  }
+
+  /**
+   * Returns a translator to convert a StockMessages object to a list of StockPrices.
+   */
+  @Bean
+  public ITranslator<StockPriceMessages, List<StockPrice>> stockPriceMessagesTranslator(
+      final ITranslator<StockPriceMessage, StockPrice> translator) {
+    return messages -> messages.getData().stream().map(translator::translate)
+        .collect(Collectors.toList());
   }
 }

@@ -65,15 +65,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.xml.Jaxb2RootElementHttpMessageConverter;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.accept.ContentNegotiationManager;
 import org.springframework.web.accept.ParameterContentNegotiationStrategy;
 
 @Slf4j
-// Otherwise, @Value injections in MessageTranslationConfig can't be resolved?
-// https://docs.spring.io/spring-boot/docs/2.1.6.RELEASE/reference/html/boot-features-testing.html
-@SpringBootTest
-@Import({MessageTranslationConfig.class, SettlementRestController.class})
+@Import({MessageTranslationConfig.class})
 @RunWith(JUnitParamsRunner.class)
 public class SettlementRestControllerTest
     extends ASpringTest {

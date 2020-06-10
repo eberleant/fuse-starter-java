@@ -11,7 +11,7 @@ import javax.validation.ValidatorFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class PricesTest {
+public class StockPriceInfoTest {
 
   private static Validator validator;
 
@@ -26,13 +26,13 @@ public class PricesTest {
    */
   @Test
   public void validPrices() {
-    Prices p = Prices.builder()
+    StockPriceInfo p = StockPriceInfo.builder()
         .open(new BigDecimal(0))
         .high(new BigDecimal(0))
         .low(new BigDecimal(0))
         .close(new BigDecimal(0)).build();
 
-    Set<ConstraintViolation<Prices>> constraintViolations = validator.validate(p);
+    Set<ConstraintViolation<StockPriceInfo>> constraintViolations = validator.validate(p);
 
     assertEquals(0, constraintViolations.size());
   }
@@ -42,13 +42,13 @@ public class PricesTest {
    */
   @Test
   public void openPriceMustBeNonNegative() {
-    Prices p = Prices.builder()
+    StockPriceInfo p = StockPriceInfo.builder()
         .open(new BigDecimal(-1))
         .high(new BigDecimal(0))
         .low(new BigDecimal(0))
         .close(new BigDecimal(0)).build();
 
-    Set<ConstraintViolation<Prices>> constraintViolations = validator.validate(p);
+    Set<ConstraintViolation<StockPriceInfo>> constraintViolations = validator.validate(p);
 
     assertEquals("Open price must be greater than or equal to 0.00",
         constraintViolations.iterator().next().getMessage());
@@ -60,13 +60,13 @@ public class PricesTest {
    */
   @Test
   public void highPriceMustBeNonNegative() {
-    Prices p = Prices.builder()
+    StockPriceInfo p = StockPriceInfo.builder()
         .open(new BigDecimal(0))
         .high(new BigDecimal(-1))
         .low(new BigDecimal(0))
         .close(new BigDecimal(0)).build();
 
-    Set<ConstraintViolation<Prices>> constraintViolations = validator.validate(p);
+    Set<ConstraintViolation<StockPriceInfo>> constraintViolations = validator.validate(p);
 
     assertEquals("High price must be greater than or equal to 0.00",
         constraintViolations.iterator().next().getMessage());
@@ -78,13 +78,13 @@ public class PricesTest {
    */
   @Test
   public void lowPriceMustBeNonNegative() {
-    Prices p = Prices.builder()
+    StockPriceInfo p = StockPriceInfo.builder()
         .open(new BigDecimal(0))
         .high(new BigDecimal(0))
         .low(new BigDecimal(-1))
         .close(new BigDecimal(0)).build();
 
-    Set<ConstraintViolation<Prices>> constraintViolations = validator.validate(p);
+    Set<ConstraintViolation<StockPriceInfo>> constraintViolations = validator.validate(p);
 
     assertEquals("Low price must be greater than or equal to 0.00",
         constraintViolations.iterator().next().getMessage());
@@ -96,13 +96,13 @@ public class PricesTest {
    */
   @Test
   public void closePriceMustBeNonNegative() {
-    Prices p = Prices.builder()
+    StockPriceInfo p = StockPriceInfo.builder()
         .open(new BigDecimal(0))
         .high(new BigDecimal(0))
         .low(new BigDecimal(0))
         .close(new BigDecimal(-1)).build();
 
-    Set<ConstraintViolation<Prices>> constraintViolations = validator.validate(p);
+    Set<ConstraintViolation<StockPriceInfo>> constraintViolations = validator.validate(p);
 
     assertEquals("Close price must be greater than or equal to 0.00",
         constraintViolations.iterator().next().getMessage());

@@ -16,7 +16,7 @@ import lombok.Value;
 @Builder
 @Data
 @Embeddable
-public class Prices {
+public class StockPriceInfo {
   @DecimalMin(value = "0.00", message = "Open price must be greater than or equal to 0.00")
   @NonNull
   private BigDecimal open;

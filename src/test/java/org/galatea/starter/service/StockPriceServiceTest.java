@@ -5,24 +5,24 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 import org.galatea.starter.ASpringTest;
 import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.domain.rpsy.IStockPriceRpsy;
+import org.galatea.starter.entrypoint.messagecontracts.StockPriceMessages;
 import org.galatea.starter.testutils.TestDataGenerator;
 import org.galatea.starter.utils.Helpers;
+import org.galatea.starter.utils.translation.ITranslator;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.BDDMockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
@@ -38,10 +38,13 @@ import org.springframework.test.context.TestPropertySource;
 @ContextConfiguration(initializers = {ConfigFileApplicationContextInitializer.class})
 @Import({StockPriceService.class})
 public class StockPriceServiceTest extends ASpringTest {
+
   @MockBean
   private IStockPriceRpsy mockStockPriceRpsy;
 
-  @Autowired // may remove annotation and set value in @Before method, see SettlementService.java
+  @MockBean
+  private ITranslator<StockPriceMessages, List<StockPrice>> mockStockMessagesTranslator;
+
   private StockPriceService service;
 
   @Value("${alpha-vantage.api-key}")
@@ -49,6 +52,14 @@ public class StockPriceServiceTest extends ASpringTest {
 
   @Value("${alpha-vantage.basePath}")
   private String basePath;
+
+  @Before
+  public void setup() {
+    service = new StockPriceService(
+        mockStockPriceRpsy,
+        mockStockMessagesTranslator
+    );
+  }
 
   /**
    * Test that StockPriceService.findStockPricesBySymbol returns list of StockPrices found by
@@ -283,9 +294,9 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testMakeApiCallReturnsNonEmptyJsonNode() {
-    JsonNode jsonNode = service.makeApiCall(
-        new ObjectMapper(), apiKey, basePath, "IBM", "compact");
-    assertTrue(jsonNode.fields().hasNext());
+    StockPriceMessages stockPriceMessages = service.makeApiCall(apiKey, basePath,
+        "IBM", "compact");
+    assertFalse(stockPriceMessages.getData().isEmpty());
   }
 
   @Configuration

@@ -1,20 +1,16 @@
 package org.galatea.starter.entrypoint;
 
 import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.matches;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
-import io.restassured.module.mockmvc.specification.MockMvcRequestSender;
 import io.restassured.response.ResponseOptions;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,7 +20,9 @@ import junitparams.JUnitParamsRunner;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.ASpringTest;
+import org.galatea.starter.MessageTranslationConfig;
 import org.galatea.starter.domain.StockPrice;
+import org.galatea.starter.entrypoint.messagecontracts.StockPriceMessages;
 import org.galatea.starter.service.StockPriceService;
 import org.galatea.starter.testutils.TestDataGenerator;
 import org.galatea.starter.utils.translation.ITranslator;
@@ -34,18 +32,30 @@ import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 import org.springframework.web.accept.ContentNegotiationManager;
 import org.springframework.web.accept.ParameterContentNegotiationStrategy;
 
 @Slf4j
-// is this necessary (had to add to SettlementRestControllerTest)
-@SpringBootTest
+// from https://stackoverflow.com/questions/21271468/spring-propertysource-using-yaml
+// why does it work?
+@TestPropertySource("classpath:application.yml")
+@ContextConfiguration(initializers = {ConfigFileApplicationContextInitializer.class})
+@Import({MessageTranslationConfig.class, StockPriceRestController.class, StockPriceService.class})
 // for running parameterized tests (run same test multiple times with different sets of parameters)
 @RunWith(JUnitParamsRunner.class)
 public class StockPriceRestControllerTest extends ASpringTest {
@@ -53,16 +63,21 @@ public class StockPriceRestControllerTest extends ASpringTest {
   @Value("${mvc.getPricePath}")
   String pricePath;
 
-  @Autowired
-  private ITranslator<JsonNode, List<StockPrice>> timeSeriesJsonTranslator;
+  @Value("${alpha-vantage.api-key}")
+  String apiKey;
+
+  @Value("${alpha-vantage.basePath}")
+  String basePath;
 
   @MockBean
   private StockPriceService mockStockPriceService;
 
   @Autowired
-  private StockPriceRestController stockPriceRestController;
+  private ITranslator<StockPriceMessages, List<StockPrice>> translator;
 
   @Autowired
+  private StockPriceRestController stockPriceRestController;
+
   private ObjectMapper objectMapper;
 
   @Before
@@ -75,6 +90,15 @@ public class StockPriceRestControllerTest extends ASpringTest {
 
     ContentNegotiationManager manager =
         new ContentNegotiationManager(parameterContentNegotiationStrategy);
+
+    BDDMockito.given(this.mockStockPriceService.getStockPrices(anyString(), anyInt()))
+        .willCallRealMethod();
+
+    ReflectionTestUtils.setField(mockStockPriceService, "apiKey", apiKey);
+    ReflectionTestUtils.setField(mockStockPriceService, "basePath", basePath);
+    ReflectionTestUtils.setField(mockStockPriceService, "stockMessagesTranslator", translator);
+
+    objectMapper = new ObjectMapper();
 
     // REST assured with Hamcrest: https://www.baeldung.com/rest-assured-tutorial
     RestAssuredMockMvc.standaloneSetup(
@@ -164,7 +188,7 @@ public class StockPriceRestControllerTest extends ASpringTest {
         .willCallRealMethod();
 
     ResponseOptions response = callGetPrices(symbol, days);
-
+    System.out.println(response.getBody().asString());
     JsonNode data = objectMapper.readTree(response.getBody().asString()).get("data");
     data.forEach(node -> {
       assertTrue(node.get("date").textValue().matches("\\d{4}-\\d{2}-\\d{2}"));
@@ -192,7 +216,7 @@ public class StockPriceRestControllerTest extends ASpringTest {
         .willReturn(false);
     BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(any(), eq(days)))
         .willCallRealMethod();
-    BDDMockito.given(this.mockStockPriceService.makeApiCall(any(), anyString(), anyString(),
+    BDDMockito.given(this.mockStockPriceService.makeApiCall(anyString(), anyString(),
         anyString(), anyString())).willCallRealMethod();
     BDDMockito.given(this.mockStockPriceService.saveStockPricesIfNotExists(any()))
         .willReturn(null);
@@ -236,15 +260,15 @@ public class StockPriceRestControllerTest extends ASpringTest {
     int days = 5;
 
     BDDMockito.given(this.mockStockPriceService.findStockPricesBySymbol(symbol))
-        .willReturn(new ArrayList<StockPrice>());
+        .willReturn(new ArrayList<>());
     BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(any(), anyInt()))
         .willReturn(false);
-    BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(any(), eq(days)))
-        .willCallRealMethod();
-    BDDMockito.given(this.mockStockPriceService.makeApiCall(any(), anyString(), anyString(),
+    BDDMockito.given(this.mockStockPriceService.makeApiCall(anyString(), anyString(),
         anyString(), anyString())).willCallRealMethod();
     BDDMockito.given(this.mockStockPriceService.saveStockPricesIfNotExists(any()))
         .willReturn(null);
+    BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(any(), eq(days)))
+        .willCallRealMethod();
 
     ResponseOptions response = callGetPrices(symbol, days);
     assertEquals(404, response.getStatusCode());
@@ -271,7 +295,7 @@ public class StockPriceRestControllerTest extends ASpringTest {
         .willReturn(false);
     BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(any(), eq(days)))
         .willCallRealMethod();
-    BDDMockito.given(this.mockStockPriceService.makeApiCall(any(), anyString(), anyString(),
+    BDDMockito.given(this.mockStockPriceService.makeApiCall(anyString(), anyString(),
         anyString(), anyString())).willCallRealMethod();
     BDDMockito.given(this.mockStockPriceService.saveStockPricesIfNotExists(any()))
         .willReturn(null);
@@ -342,6 +366,20 @@ public class StockPriceRestControllerTest extends ASpringTest {
 
     assertEquals("BAD_REQUEST", error.get("status").textValue());
     assertEquals("Days must be greater than or equal to 0. ", error.get("message").textValue());
+  }
+
+  @Configuration
+  static class TestConfig {
+
+    @Bean
+    PropertySourcesPlaceholderConfigurer propertiesResolver() {
+      return new PropertySourcesPlaceholderConfigurer();
+    }
+
+    @Bean
+    MethodValidationPostProcessor methodValidationPostProcessor() {
+      return new MethodValidationPostProcessor();
+    }
   }
 
 }

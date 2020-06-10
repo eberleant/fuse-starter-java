@@ -7,12 +7,11 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 import lombok.extern.slf4j.Slf4j;
-import org.galatea.starter.domain.Prices;
+import org.galatea.starter.domain.StockPriceInfo;
 import org.galatea.starter.domain.SettlementMission;
 import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.domain.TradeAgreement;
 import org.galatea.starter.entrypoint.messagecontracts.ProtobufMessages;
-import org.galatea.starter.utils.Helpers;
 
 /**
  * Utility class for generating default domain objects for tests.
@@ -111,8 +110,8 @@ public class TestDataGenerator {
   /**
    * Generate a Prices builder with some default test values.
    */
-  public static Prices.PricesBuilder defaultPricesData() {
-    return Prices.builder()
+  public static StockPriceInfo.StockPriceInfoBuilder defaultPricesData() {
+    return StockPriceInfo.builder()
         .open(new BigDecimal(0))
         .high(new BigDecimal(0))
         .low(new BigDecimal(0))

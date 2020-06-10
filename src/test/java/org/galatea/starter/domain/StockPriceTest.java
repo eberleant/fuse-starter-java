@@ -13,9 +13,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import org.galatea.starter.ASpringTest;
-import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.testutils.TestDataGenerator;
-import org.galatea.starter.utils.Helpers;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -37,7 +35,7 @@ public class StockPriceTest extends ASpringTest {
     StockPrice sp = StockPrice.builder()
         .symbol("IBM")
         .date(new Date(0))
-        .prices(Prices.builder()
+        .prices(StockPriceInfo.builder()
             .open(new BigDecimal(0))
             .high(new BigDecimal(0))
             .low(new BigDecimal(0))
@@ -121,7 +119,7 @@ public class StockPriceTest extends ASpringTest {
     StockPrice sp = StockPrice.builder()
         .symbol("IBM")
         .date(new Date(0))
-        .prices(Prices.builder()
+        .prices(StockPriceInfo.builder()
             .open(new BigDecimal(-1))
             .high(new BigDecimal(0))
             .low(new BigDecimal(0))
@@ -177,7 +175,7 @@ public class StockPriceTest extends ASpringTest {
     assertFalse(sp1.equals(sp2)); // different dates
 
     sp2.setDate(sp1.getDate());
-    sp2.setPrices(Prices.builder()
+    sp2.setPrices(StockPriceInfo.builder()
         .open(new BigDecimal(1))
         .high(new BigDecimal(0))
         .low(new BigDecimal(0))

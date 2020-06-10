@@ -1,7 +1,7 @@
 package org.galatea.starter.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.math.BigDecimal;
 import java.sql.Date;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
@@ -9,10 +9,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.validation.Valid;
-import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Past;
-import javax.validation.constraints.PastOrPresent;
 import javax.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -20,7 +17,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE) // For builder
@@ -43,13 +39,14 @@ public class StockPrice {
   @NonNull
   private String symbol;
 
+  @JsonFormat(pattern = "yyyy-MM-dd")
   @NonNull
   private Date date;
 
   @NonNull
   @Valid
   @Embedded
-  private Prices prices;
+  private StockPriceInfo prices;
 
   public boolean equals(StockPrice other) {
     return this.symbol.equals(other.symbol)
