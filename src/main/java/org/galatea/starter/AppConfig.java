@@ -23,13 +23,6 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 @EnableFeignClients
 public class AppConfig {
 
-//  @Bean
-//  public Jackson2ObjectMapperBuilder objectMapperBuilder() {
-//    Jackson2ObjectMapperBuilder b = new Jackson2ObjectMapperBuilder();
-//    b.indentOutput(true);
-//    return b;
-//  }
-
   /**
    * Create a LogAspect for use with the SpringAOP @Log annotation.
    */

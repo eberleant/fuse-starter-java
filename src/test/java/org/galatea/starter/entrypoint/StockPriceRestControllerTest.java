@@ -22,6 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.ASpringTest;
 import org.galatea.starter.MessageTranslationConfig;
 import org.galatea.starter.domain.StockPrice;
+import org.galatea.starter.domain.rpsy.ISettlementMissionRpsy;
+import org.galatea.starter.domain.rpsy.IStockPriceRpsy;
 import org.galatea.starter.entrypoint.messagecontracts.StockPriceMessages;
 import org.galatea.starter.service.StockPriceService;
 import org.galatea.starter.testutils.TestDataGenerator;
@@ -39,6 +41,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.context.ContextConfiguration;
@@ -55,7 +58,7 @@ import org.springframework.web.accept.ParameterContentNegotiationStrategy;
 // why does it work?
 @TestPropertySource("classpath:application.yml")
 @ContextConfiguration(initializers = {ConfigFileApplicationContextInitializer.class})
-@Import({MessageTranslationConfig.class, StockPriceRestController.class, StockPriceService.class})
+@Import({MessageTranslationConfig.class, StockPriceService.class})
 // for running parameterized tests (run same test multiple times with different sets of parameters)
 @RunWith(JUnitParamsRunner.class)
 public class StockPriceRestControllerTest extends ASpringTest {
@@ -66,14 +69,17 @@ public class StockPriceRestControllerTest extends ASpringTest {
   @Value("${alpha-vantage.api-key}")
   String apiKey;
 
-  @Value("${alpha-vantage.basePath}")
+  @Value("${alpha-vantage.dailyTimeSeriesPath}")
   String basePath;
+
+  @Autowired
+  private ITranslator<StockPriceMessages, List<StockPrice>> translator;
 
   @MockBean
   private StockPriceService mockStockPriceService;
 
-  @Autowired
-  private ITranslator<StockPriceMessages, List<StockPrice>> translator;
+  @MockBean
+  private IStockPriceRpsy mockStockPriceRpsy;
 
   @Autowired
   private StockPriceRestController stockPriceRestController;
@@ -93,10 +99,15 @@ public class StockPriceRestControllerTest extends ASpringTest {
 
     BDDMockito.given(this.mockStockPriceService.getStockPrices(anyString(), anyInt()))
         .willCallRealMethod();
+    BDDMockito.given(this.mockStockPriceService.makeApiCall(anyString(), anyString()))
+        .willCallRealMethod();
+    BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(any(), anyInt()))
+        .willCallRealMethod();
 
     ReflectionTestUtils.setField(mockStockPriceService, "apiKey", apiKey);
     ReflectionTestUtils.setField(mockStockPriceService, "basePath", basePath);
     ReflectionTestUtils.setField(mockStockPriceService, "stockMessagesTranslator", translator);
+//    ReflectionTestUtils.setField(mockStockPriceService, "stockPriceRpsy", mockStockPriceRpsy);
 
     objectMapper = new ObjectMapper();
 
@@ -136,8 +147,6 @@ public class StockPriceRestControllerTest extends ASpringTest {
         .willReturn(stockPrices);
     BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(stockPrices, days))
         .willReturn(true);
-    BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(stockPrices, days))
-        .willCallRealMethod();
 
     ResponseOptions response = callGetPrices(symbol, days);
 
@@ -160,8 +169,6 @@ public class StockPriceRestControllerTest extends ASpringTest {
         .willReturn(stockPrices);
     BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(stockPrices, days))
         .willReturn(true);
-    BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(stockPrices, days))
-        .willCallRealMethod();
 
     ResponseOptions response = callGetPrices(symbol, days);
 
@@ -184,8 +191,6 @@ public class StockPriceRestControllerTest extends ASpringTest {
         .willReturn(stockPrices);
     BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(stockPrices, days))
         .willReturn(true);
-    BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(stockPrices, days))
-        .willCallRealMethod();
 
     ResponseOptions response = callGetPrices(symbol, days);
     System.out.println(response.getBody().asString());
@@ -214,15 +219,11 @@ public class StockPriceRestControllerTest extends ASpringTest {
         .willReturn(stockPrices);
     BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(stockPrices, days))
         .willReturn(false);
-    BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(any(), eq(days)))
-        .willCallRealMethod();
-    BDDMockito.given(this.mockStockPriceService.makeApiCall(anyString(), anyString(),
-        anyString(), anyString())).willCallRealMethod();
     BDDMockito.given(this.mockStockPriceService.saveStockPricesIfNotExists(any()))
         .willReturn(null);
 
     ResponseOptions response = callGetPrices(symbol, days);
-
+    log.info("Response body: {}", response.getBody().asString());
     JsonNode data = objectMapper.readTree(response.getBody().asString()).get("data");
     assertEquals(days, data.size());
   }
@@ -263,12 +264,8 @@ public class StockPriceRestControllerTest extends ASpringTest {
         .willReturn(new ArrayList<>());
     BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(any(), anyInt()))
         .willReturn(false);
-    BDDMockito.given(this.mockStockPriceService.makeApiCall(anyString(), anyString(),
-        anyString(), anyString())).willCallRealMethod();
     BDDMockito.given(this.mockStockPriceService.saveStockPricesIfNotExists(any()))
         .willReturn(null);
-    BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(any(), eq(days)))
-        .willCallRealMethod();
 
     ResponseOptions response = callGetPrices(symbol, days);
     assertEquals(404, response.getStatusCode());
@@ -293,10 +290,6 @@ public class StockPriceRestControllerTest extends ASpringTest {
         .willReturn(stockPrices);
     BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(stockPrices, days))
         .willReturn(false);
-    BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(any(), eq(days)))
-        .willCallRealMethod();
-    BDDMockito.given(this.mockStockPriceService.makeApiCall(anyString(), anyString(),
-        anyString(), anyString())).willCallRealMethod();
     BDDMockito.given(this.mockStockPriceService.saveStockPricesIfNotExists(any()))
         .willReturn(null);
 
@@ -323,8 +316,6 @@ public class StockPriceRestControllerTest extends ASpringTest {
         .willReturn(stockPrices);
     BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(any(), anyInt()))
         .willReturn(true);
-    BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(any(), anyInt()))
-        .willCallRealMethod();
 
     ResponseOptions response = callGetPrices(pricePath + "?symbol=" + symbol);
     JsonNode data = objectMapper.readTree(response.getBody().asString()).get("data");
@@ -368,6 +359,7 @@ public class StockPriceRestControllerTest extends ASpringTest {
     assertEquals("Days must be greater than or equal to 0. ", error.get("message").textValue());
   }
 
+  @Import({StockPriceRestController.class})
   @Configuration
   static class TestConfig {
 

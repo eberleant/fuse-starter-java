@@ -86,7 +86,8 @@ public class MvcConfig implements WebMvcConfigurer {
     // The Protobuf converter MUST be added first, otherwise Jackson will try and handle our
     // protobuf to JSON conversion (and will of course, fail).
     converters.add(new ProtobufHttpMessageConverter()); // Protobuf, XML & JSON supported
-    MappingJackson2HttpMessageConverter jacksonConverter = new MappingJackson2HttpMessageConverter();
+    MappingJackson2HttpMessageConverter jacksonConverter =
+        new MappingJackson2HttpMessageConverter();
     jacksonConverter.setPrettyPrint(true);
     converters.add(jacksonConverter); // JSON
     converters.add(new Jaxb2RootElementHttpMessageConverter()); // XML

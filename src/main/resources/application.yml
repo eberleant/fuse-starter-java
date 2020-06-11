@@ -38,7 +38,7 @@ jms:
    agreement-queue-proto: sandbox.agreement.proto
 alpha-vantage:
    api-key: 2TE9BO3PHOK5W9HH
-   basePath: https://www.alphavantage.co/
+   dailyTimeSeriesPath: https://www.alphavantage.co/query?function=TIME_SERIES_DAILY
 # Set debug level logging for the IEX Client so that Feign requests and responses are logged out
 log.level.org.galatea.starter.service.IEXClient: DEBUG
 # Set info level logging for the autoconfigure package so that it doesn't print out the entire

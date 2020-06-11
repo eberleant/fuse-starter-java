@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 // from https://stackoverflow.com/questions/21271468/spring-propertysource-using-yaml
 // why does it work?
@@ -50,7 +51,7 @@ public class StockPriceServiceTest extends ASpringTest {
   @Value("${alpha-vantage.api-key}")
   private String apiKey;
 
-  @Value("${alpha-vantage.basePath}")
+  @Value("${alpha-vantage.dailyTimeSeriesPath}")
   private String basePath;
 
   @Before
@@ -59,6 +60,9 @@ public class StockPriceServiceTest extends ASpringTest {
         mockStockPriceRpsy,
         mockStockMessagesTranslator
     );
+
+    ReflectionTestUtils.setField(service, "apiKey", apiKey);
+    ReflectionTestUtils.setField(service, "basePath", basePath);
   }
 
   /**
@@ -294,8 +298,7 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testMakeApiCallReturnsNonEmptyJsonNode() {
-    StockPriceMessages stockPriceMessages = service.makeApiCall(apiKey, basePath,
-        "IBM", "compact");
+    StockPriceMessages stockPriceMessages = service.makeApiCall("IBM", "compact");
     assertFalse(stockPriceMessages.getData().isEmpty());
   }
 

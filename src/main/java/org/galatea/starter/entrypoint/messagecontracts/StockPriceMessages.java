@@ -16,14 +16,14 @@ public class StockPriceMessages {
 
   @JsonCreator
   private StockPriceMessages(
-      @JsonProperty("Meta Data") Map<String, String> metadata,
-      @JsonProperty("Time Series (Daily)") Map<String, StockPriceInfoMessage> timeSeries) {
+      @JsonProperty("Meta Data") final Map<String, String> metadata,
+      @JsonProperty("Time Series (Daily)") final Map<String, StockPriceInfoMessage> timeSeries) {
     String symbol = metadata.get("2. Symbol");
     this.data = extractData(symbol, timeSeries);
   }
 
-  private List<StockPriceMessage> extractData(String symbol,
-      Map<String, StockPriceInfoMessage> timeSeries) {
+  private List<StockPriceMessage> extractData(final String symbol,
+      final Map<String, StockPriceInfoMessage> timeSeries) {
     List<StockPriceMessage> data = new ArrayList<>();
     timeSeries.forEach((date, info) -> data.add(StockPriceMessage.builder()
         .symbol(symbol)

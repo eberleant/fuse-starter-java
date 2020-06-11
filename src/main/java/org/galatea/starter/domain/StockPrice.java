@@ -48,7 +48,13 @@ public class StockPrice {
   @Embedded
   private StockPriceInfo prices;
 
-  public boolean equals(StockPrice other) {
+  /**
+   * Custom equals method that ignores the value of ID. Returns true if the stock symbols, dates,
+   * and prices of the two StockPrice objects are the same, false otherwise.
+   * @param other the StockPrice object to compare with
+   * @return
+   */
+  public boolean equals(final StockPrice other) {
     return this.symbol.equals(other.symbol)
         && this.date.equals(other.date)
         && this.prices.equals(other.prices);

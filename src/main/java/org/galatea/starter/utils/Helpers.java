@@ -55,10 +55,10 @@ public class Helpers {
 
   /**
    * Converts String representation of date (yyyy-MM-dd) into instance of java.sql.Date class.
-   * @param strDate
+   * @param strDate string representation of date using pattern yyyy-MM-dd
    * @return
    */
-  public static Date stringToDate(String strDate) {
+  public static Date stringToDate(final String strDate) {
     String[] strDateSplit = strDate.split("-");
     int year = Integer.parseInt(strDateSplit[0]);
     int month = Integer.parseInt(strDateSplit[1]) - 1;
@@ -70,11 +70,11 @@ public class Helpers {
   }
 
   /**
-   * Given a Date object, returns a new Date with the same year, month, and day but time 00:00.
-   * @param date
+   * Given a Date object, returns a new Date with the same year, month, and day but time 00:00 UTC.
+   * @param date any date
    * @return
    */
-  private static Date getStartOfDay(Date date) {
+  private static Date getStartOfDay(final Date date) {
     Calendar calendar = Calendar.getInstance();
     calendar.setTimeZone(TimeZone.getTimeZone("Universal"));
     calendar.setTime(date);
@@ -88,20 +88,26 @@ public class Helpers {
   }
 
   /**
-   * Given a number of days N, returns a Date N days ago at the beginning of the day
-   * @param daysAgo
+   * Given a number of days N, returns a Date N days ago at 00:00 UTC.
+   * @param daysAgo number of days ago to return
    * @return
    */
-  public static Date getDateNDaysAgo(int daysAgo) {
+  public static Date getDateNDaysAgo(final int daysAgo) {
     return getStartOfDay(new Date(
         Date.from(Instant.now().minus(Duration.ofDays(daysAgo))).getTime()));
   }
 
+  /**
+   * Get the most recent weekday based on the current day. If it is before 5pm Eastern,
+   * which is around when Alpha Vantage's API updates for the day, then the most recent weekday
+   * is calculated from the previous day, instead of the current day.
+   * @return
+   */
   public static Date getMostRecentWeekday() {
     Calendar endOfWorkday = Calendar.getInstance();
     endOfWorkday.setTimeZone(TimeZone.getTimeZone("Universal"));
     endOfWorkday.setTime(getDateNDaysAgo(0));
-    endOfWorkday.set(Calendar.HOUR_OF_DAY, 17); // 5PM
+    endOfWorkday.set(Calendar.HOUR_OF_DAY, 21); // 5PM
 
     Calendar currentDate = Calendar.getInstance();
     currentDate.setTimeZone(TimeZone.getTimeZone("Universal"));
