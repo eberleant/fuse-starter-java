@@ -7,6 +7,7 @@ import javax.validation.constraints.Min;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.domain.StockPrice;
+import org.galatea.starter.domain.rpsy.IStockPriceRpsy;
 import org.galatea.starter.entrypoint.messagecontracts.StockPriceMessages;
 import org.galatea.starter.service.StockPriceService;
 import org.galatea.starter.utils.Helpers;
@@ -26,6 +27,9 @@ public class StockPriceRestController extends BaseRestController {
 
   @Autowired
   StockPriceService stockPriceService;
+
+  @Autowired
+  IStockPriceRpsy stockPriceRpsy;
 
   ObjectMapper objectMapper = new ObjectMapper();
 
@@ -72,7 +76,7 @@ public class StockPriceRestController extends BaseRestController {
     metadata.put("symbol", symbol);
     metadata.put("days", days);
     metadata.put("request-date", Helpers.getDateNDaysAgo(0).toString());
-    metadata.put("time-zone", "US/Eastern");
+    metadata.put("time-zone", "Universal");
     return metadata;
   }
 }

@@ -49,6 +49,7 @@ public class StockPriceService {
           result = makeApiCall(apiKey, basePath, symbol, (days > 100 ? "full" : "compact"));
       stockPrices = stockMessagesTranslator.translate(result);
       // store result of api call in db
+      log.info("Most recent stock price to save: {}", stockPrices.get(0).getDate());
       saveStockPricesIfNotExists(stockPrices);
     }
 
@@ -78,7 +79,6 @@ public class StockPriceService {
     log.info("Retrieving StockPrices with symbol {}", symbol);
     List<StockPrice> found = stockPriceRpsy.findBySymbolIgnoreCaseOrderByDateDesc(symbol);
     log.info("Finished.");
-//    found.forEach(sp -> log.info(sp.toString()));
     return found;
   }
 
@@ -101,7 +101,6 @@ public class StockPriceService {
   @SneakyThrows
   public StockPriceMessages makeApiCall(String apiKey, String basePath,
       final String symbol, String outputSize) {
-    log.info("in makeApiCall with {}, {}, {}, {}", apiKey, basePath, symbol, outputSize);
     String urlString = basePath + "/query?function=TIME_SERIES_DAILY"
         + "&symbol=" + symbol
         + "&outputsize=" + outputSize

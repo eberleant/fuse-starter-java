@@ -64,7 +64,7 @@ public class Helpers {
     int month = Integer.parseInt(strDateSplit[1]) - 1;
     int day = Integer.parseInt(strDateSplit[2]);
     Calendar calendar = Calendar.getInstance();
-    calendar.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+    calendar.setTimeZone(TimeZone.getTimeZone("Universal"));
     calendar.set(year, month, day, 0, 0, 0);
     return getStartOfDay(new Date(calendar.getTimeInMillis()));
   }
@@ -76,14 +76,14 @@ public class Helpers {
    */
   private static Date getStartOfDay(Date date) {
     Calendar calendar = Calendar.getInstance();
-    calendar.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+    calendar.setTimeZone(TimeZone.getTimeZone("Universal"));
     calendar.setTime(date);
-    ZoneId zoneId = ZoneId.of("America/New_York");
+    ZoneId zoneId = ZoneId.of("Universal");
     LocalDate today = LocalDate.of(
         calendar.get(Calendar.YEAR),
         calendar.get(Calendar.MONTH) + 1,
         calendar.get(Calendar.DAY_OF_MONTH));
-    ZonedDateTime zdtStart = today.atStartOfDay(zoneId) ;
+    ZonedDateTime zdtStart = today.atStartOfDay(zoneId);
     return new Date(Date.from(zdtStart.toInstant()).getTime());
   }
 
@@ -99,12 +99,12 @@ public class Helpers {
 
   public static Date getMostRecentWeekday() {
     Calendar endOfWorkday = Calendar.getInstance();
-    endOfWorkday.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+    endOfWorkday.setTimeZone(TimeZone.getTimeZone("Universal"));
     endOfWorkday.setTime(getDateNDaysAgo(0));
     endOfWorkday.set(Calendar.HOUR_OF_DAY, 17); // 5PM
 
     Calendar currentDate = Calendar.getInstance();
-    currentDate.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+    currentDate.setTimeZone(TimeZone.getTimeZone("Universal"));
     currentDate.setTime(new Date(Instant.now().toEpochMilli())); // current time
 
     int offset = 0;

@@ -9,11 +9,16 @@ spring:
       # in case you want to use H2 with a file persistence or as a service
       # reference http://www.h2database.com/html/cheatSheet.html and
       # http://www.h2database.com/html/tutorial.html#using_server
-      url: jdbc:h2:mem:testtest
-      driver-class-name: org.h2.Driver
+#      url: jdbc:h2:mem:testtest
+#      driver-class-name: org.h2.Driver
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/db_example?serverTimezone=UTC&useLegacyDatetimeCode=false
+      username: springuser
+      password: ThePassword
    jpa:
       hibernate:
          ddl-auto: update
+      show-sql: true
       database-platform: org.hibernate.dialect.MySQL5Dialect
 
 mvc:
@@ -45,8 +50,8 @@ logging.level.org.springframework.boot.autoconfigure: INFO
 spring:
    profiles: test
    datasource:
-      username: sa
-      password:
+      username: springuser
+      password: ThePassword
    rest:
       # this points at the local WireMock server in the test environment.
       iexBasePath: http://localhost:${wiremock.server.port}/
@@ -56,8 +61,8 @@ spring:
 spring:
    profiles: dev
    datasource:
-      username: sa
-      password:
+      username: springuser
+      password: ThePassword
    rest:
       iexBasePath: https://api.iextrading.com/1.0
 # set debug to get spring to log the classpath (and other things) on startup
@@ -68,8 +73,8 @@ debug: true
 spring:
    profiles: uat
    datasource:
-      username: sa
-      password:
+      username: springuser
+      password: ThePassword
 
 ---
 # Mappings for Rest Controllers
