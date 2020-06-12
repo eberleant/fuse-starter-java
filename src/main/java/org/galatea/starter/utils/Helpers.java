@@ -75,16 +75,16 @@ public class Helpers {
    * @return
    */
   public static Date getStartOfDay(final Date date) {
-//    Calendar calendar = Calendar.getInstance();
-//    calendar.setTimeZone(TimeZone.getTimeZone("Universal"));
-//    calendar.setTime(date);
-//    ZoneId zoneId = ZoneId.of("Universal");
-//    LocalDate today = LocalDate.of(
-//        calendar.get(Calendar.YEAR),
-//        calendar.get(Calendar.MONTH) + 1,
-//        calendar.get(Calendar.DAY_OF_MONTH));
-//    ZonedDateTime zdtStart = today.atStartOfDay(zoneId);
-//    return new Date(Date.from(zdtStart.toInstant()).getTime());
+    // Calendar calendar = Calendar.getInstance();
+    // calendar.setTimeZone(TimeZone.getTimeZone("Universal"));
+    // calendar.setTime(date);
+    // ZoneId zoneId = ZoneId.of("Universal");
+    // LocalDate today = LocalDate.of(
+    //     calendar.get(Calendar.YEAR),
+    //     calendar.get(Calendar.MONTH) + 1,
+    //     calendar.get(Calendar.DAY_OF_MONTH));
+    // ZonedDateTime zdtStart = today.atStartOfDay(zoneId);
+    // return new Date(Date.from(zdtStart.toInstant()).getTime());
     int days = (int) (date.getTime() / (1000L * 60 * 60 * 24));
     return new Date(days * 24L * 60 * 60 * 1000);
   }
