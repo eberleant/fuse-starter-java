@@ -95,8 +95,7 @@ public class Helpers {
    * @return
    */
   public static Date getDateNDaysAgo(final int daysAgo) {
-    return getStartOfDay(new Date(
-        Date.from(Instant.now().minus(Duration.ofDays(daysAgo))).getTime()));
+    return new Date(Date.from(Instant.now().minus(Duration.ofDays(daysAgo))).getTime());
   }
 
   /**
@@ -122,11 +121,11 @@ public class Helpers {
     }
 
     if (currentDate.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
-      return getDateNDaysAgo(2 + offset);
+      return getStartOfDay(getDateNDaysAgo(2 + offset));
     } else if (currentDate.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
-      return getDateNDaysAgo(1 + offset);
+      return getStartOfDay(getDateNDaysAgo(1 + offset));
     } else {
-      return getDateNDaysAgo(offset);
+      return getStartOfDay(getDateNDaysAgo(offset));
     }
   }
 }

@@ -73,7 +73,6 @@ public class StockPriceRestController extends BaseRestController {
     metadata.put("symbol", symbol);
     metadata.put("days", days);
     metadata.put("request-date", Helpers.getDateNDaysAgo(0).toString());
-    metadata.put("time-zone", "Universal");
     return metadata;
   }
 }
