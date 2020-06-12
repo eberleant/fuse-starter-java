@@ -61,7 +61,7 @@ public class Helpers {
   public static Date stringToDate(final String strDate) {
     String[] strDateSplit = strDate.split("-");
     int year = Integer.parseInt(strDateSplit[0]);
-    int month = Integer.parseInt(strDateSplit[1]) - 1;
+    int month = Integer.parseInt(strDateSplit[1]) - 1; // Calendar months start at 0
     int day = Integer.parseInt(strDateSplit[2]);
     Calendar calendar = Calendar.getInstance();
     calendar.setTimeZone(TimeZone.getTimeZone("Universal"));
@@ -74,17 +74,19 @@ public class Helpers {
    * @param date any date
    * @return
    */
-  private static Date getStartOfDay(final Date date) {
-    Calendar calendar = Calendar.getInstance();
-    calendar.setTimeZone(TimeZone.getTimeZone("Universal"));
-    calendar.setTime(date);
-    ZoneId zoneId = ZoneId.of("Universal");
-    LocalDate today = LocalDate.of(
-        calendar.get(Calendar.YEAR),
-        calendar.get(Calendar.MONTH) + 1,
-        calendar.get(Calendar.DAY_OF_MONTH));
-    ZonedDateTime zdtStart = today.atStartOfDay(zoneId);
-    return new Date(Date.from(zdtStart.toInstant()).getTime());
+  public static Date getStartOfDay(final Date date) {
+//    Calendar calendar = Calendar.getInstance();
+//    calendar.setTimeZone(TimeZone.getTimeZone("Universal"));
+//    calendar.setTime(date);
+//    ZoneId zoneId = ZoneId.of("Universal");
+//    LocalDate today = LocalDate.of(
+//        calendar.get(Calendar.YEAR),
+//        calendar.get(Calendar.MONTH) + 1,
+//        calendar.get(Calendar.DAY_OF_MONTH));
+//    ZonedDateTime zdtStart = today.atStartOfDay(zoneId);
+//    return new Date(Date.from(zdtStart.toInstant()).getTime());
+    int days = (int) (date.getTime() / (1000L * 60 * 60 * 24));
+    return new Date(days * 24L * 60 * 60 * 1000);
   }
 
   /**
@@ -107,7 +109,7 @@ public class Helpers {
     Calendar endOfWorkday = Calendar.getInstance();
     endOfWorkday.setTimeZone(TimeZone.getTimeZone("Universal"));
     endOfWorkday.setTime(getDateNDaysAgo(0));
-    endOfWorkday.set(Calendar.HOUR_OF_DAY, 21); // 5PM
+    endOfWorkday.set(Calendar.HOUR_OF_DAY, 21); // 5PM ET
 
     Calendar currentDate = Calendar.getInstance();
     currentDate.setTimeZone(TimeZone.getTimeZone("Universal"));

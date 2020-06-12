@@ -55,7 +55,7 @@ public class StockPriceTest extends ASpringTest {
     StockPrice sp = StockPrice.builder()
         .symbol(symbol)
         .date(new Date(0))
-        .prices(TestDataGenerator.defaultPricesData().build()).build();
+        .prices(TestDataGenerator.defaultStockPriceInfoData().build()).build();
 
     Set<ConstraintViolation<StockPrice>> constraintViolations = validator.validate(sp);
 
@@ -72,7 +72,7 @@ public class StockPriceTest extends ASpringTest {
     StockPrice sp = StockPrice.builder()
         .symbol("")
         .date(new Date(0))
-        .prices(TestDataGenerator.defaultPricesData().build()).build();
+        .prices(TestDataGenerator.defaultStockPriceInfoData().build()).build();
 
     Set<ConstraintViolation<StockPrice>> constraintViolations = validator.validate(sp);
 
@@ -89,7 +89,7 @@ public class StockPriceTest extends ASpringTest {
     try {
       StockPrice.builder()
           .date(new Date(0))
-          .prices(TestDataGenerator.defaultPricesData().build()).build();
+          .prices(TestDataGenerator.defaultStockPriceInfoData().build()).build();
       assertTrue("StockPrice with null symbol was allowed to be built", false);
     } catch (NullPointerException npe) {
       assertTrue("Null pointer exception thrown when symbol is null", true);
@@ -104,7 +104,7 @@ public class StockPriceTest extends ASpringTest {
     try {
       StockPrice.builder()
           .symbol("IBM")
-          .prices(TestDataGenerator.defaultPricesData().build()).build();
+          .prices(TestDataGenerator.defaultStockPriceInfoData().build()).build();
       assertTrue("StockPrice with null date was allowed to be built", false);
     } catch (NullPointerException npe) {
       assertTrue("Null pointer exception thrown when date is null", true);
@@ -140,12 +140,12 @@ public class StockPriceTest extends ASpringTest {
     StockPrice sp1 = StockPrice.builder()
         .symbol("IBM")
         .date(new Date(0))
-        .prices(TestDataGenerator.defaultPricesData().build())
+        .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .id(1L).build();
     StockPrice sp2 = StockPrice.builder()
         .symbol("IBM")
         .date(new Date(0))
-        .prices(TestDataGenerator.defaultPricesData().build())
+        .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .id(2L).build();
 
     assertTrue(sp1.equals(sp2));
@@ -159,7 +159,7 @@ public class StockPriceTest extends ASpringTest {
     StockPrice sp1 = StockPrice.builder()
         .symbol("IBM")
         .date(new Date(0))
-        .prices(TestDataGenerator.defaultPricesData().build())
+        .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .id(1L).build();
     StockPrice sp2 = StockPrice.builder()
         .symbol("DNKN")

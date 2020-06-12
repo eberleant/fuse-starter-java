@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,9 @@ import org.galatea.starter.domain.SettlementMission;
 import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.domain.TradeAgreement;
 import org.galatea.starter.entrypoint.messagecontracts.ProtobufMessages;
+import org.galatea.starter.entrypoint.messagecontracts.StockPriceInfoMessage;
+import org.galatea.starter.entrypoint.messagecontracts.StockPriceMessage;
+import org.galatea.starter.entrypoint.messagecontracts.StockPriceMessages;
 
 /**
  * Utility class for generating default domain objects for tests.
@@ -78,7 +82,7 @@ public class TestDataGenerator {
         .id(100L)
         .symbol("IBM")
         .date(date)
-        .prices(defaultPricesData().build());
+        .prices(defaultStockPriceInfoData().build());
   }
 
   /**
@@ -93,14 +97,14 @@ public class TestDataGenerator {
     for (int i = 0; i < num; i++) {
       Calendar calendar = Calendar.getInstance();
       int year = rand.nextInt(30) + 1980;
-      int dayOfYear = rand.nextInt(366);
+      int dayOfYear = rand.nextInt(365) + 1;
 
       calendar.set(Calendar.YEAR, year);
       calendar.set(Calendar.DAY_OF_YEAR, dayOfYear);
 
       stockPrices.add(StockPrice.builder()
           .date(new Date(calendar.getTimeInMillis()))
-          .prices(TestDataGenerator.defaultPricesData().build())
+          .prices(TestDataGenerator.defaultStockPriceInfoData().build())
           .symbol(symbol)
           .id((long) i).build());
     }
@@ -108,13 +112,44 @@ public class TestDataGenerator {
   }
 
   /**
-   * Generate a Prices builder with some default test values.
+   * Generate a StockPriceInfo builder with some default test values.
    */
-  public static StockPriceInfo.StockPriceInfoBuilder defaultPricesData() {
+  public static StockPriceInfo.StockPriceInfoBuilder defaultStockPriceInfoData() {
     return StockPriceInfo.builder()
         .open(new BigDecimal(0))
         .high(new BigDecimal(0))
         .low(new BigDecimal(0))
         .close(new BigDecimal(0));
+  }
+
+  /**
+   * Generate a StockPriceMessages builder with some default test values.
+   */
+  public static StockPriceMessages.StockPriceMessagesBuilder defaultStockPriceMessagesData() {
+    return StockPriceMessages.builder()
+        .data(Collections.singletonList(TestDataGenerator.defaultStockPriceMessageData().build()));
+  }
+
+  /**
+   * Generate a StockPriceMessage builder with some default test values.
+   */
+  public static StockPriceMessage.StockPriceMessageBuilder defaultStockPriceMessageData() {
+    return StockPriceMessage.builder()
+        .symbol("IBM")
+        .date(new Date(0))
+        .stockInfo(TestDataGenerator.defaultStockPriceInfoMessageData().build());
+  }
+
+  /**
+   * Generate a StockPriceInfoMessage builder with some default test values.
+   */
+  public static StockPriceInfoMessage.StockPriceInfoMessageBuilder
+  defaultStockPriceInfoMessageData() {
+    return StockPriceInfoMessage.builder()
+        .open(new BigDecimal(0))
+        .high(new BigDecimal(0))
+        .low(new BigDecimal(0))
+        .close(new BigDecimal(0))
+        .volume(100);
   }
 }

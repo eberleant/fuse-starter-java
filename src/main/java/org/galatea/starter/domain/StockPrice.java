@@ -51,13 +51,19 @@ public class StockPrice {
   /**
    * Custom equals method that ignores the value of ID. Returns true if the stock symbols, dates,
    * and prices of the two StockPrice objects are the same, false otherwise.
-   * @param other the StockPrice object to compare with
+   * @param obj the StockPrice object to compare with
    * @return
    */
-  public boolean equals(final StockPrice other) {
-    return this.symbol.equals(other.symbol)
-        && this.date.equals(other.date)
-        && this.prices.equals(other.prices);
+  @Override
+  public boolean equals(final Object obj) {
+    if (!(obj instanceof StockPrice)) {
+      return false;
+    }
+
+    StockPrice otherStockPrice = (StockPrice) obj;
+    return this.symbol.equals(otherStockPrice.symbol)
+        && this.date.equals(otherStockPrice.date)
+        && this.prices.equals(otherStockPrice.prices);
   }
 
 }

@@ -246,7 +246,7 @@ public class StockPriceServiceTest extends ASpringTest {
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
         .date(new Date(0))
-        .prices(TestDataGenerator.defaultPricesData().build())
+        .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .symbol("IBM").build());
     assertFalse(service.hasNecessaryStockPrices(stockPrices, 5));
   }
@@ -260,7 +260,7 @@ public class StockPriceServiceTest extends ASpringTest {
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
         .date(Helpers.getMostRecentWeekday())
-        .prices(TestDataGenerator.defaultPricesData().build())
+        .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .symbol("IBM").build());
     assertFalse(service.hasNecessaryStockPrices(stockPrices, 15));
   }
@@ -274,7 +274,7 @@ public class StockPriceServiceTest extends ASpringTest {
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
         .date(Helpers.getMostRecentWeekday())
-        .prices(TestDataGenerator.defaultPricesData().build())
+        .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .symbol("IBM").build());
     assertTrue(service.hasNecessaryStockPrices(stockPrices, 10));
   }
@@ -288,7 +288,7 @@ public class StockPriceServiceTest extends ASpringTest {
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
         .date(Helpers.getMostRecentWeekday())
-        .prices(TestDataGenerator.defaultPricesData().build())
+        .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .symbol("IBM").build());
     assertTrue(service.hasNecessaryStockPrices(stockPrices, 5));
   }
