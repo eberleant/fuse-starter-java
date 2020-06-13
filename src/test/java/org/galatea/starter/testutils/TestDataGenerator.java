@@ -2,6 +2,7 @@ package org.galatea.starter.testutils;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -75,13 +76,11 @@ public class TestDataGenerator {
    * Generate a StockPrice builder populated with some default test values.
    */
   public static StockPrice.StockPriceBuilder defaultStockPriceData() {
-    Calendar calendar = Calendar.getInstance();
-    calendar.set(2020, Calendar.JANUARY, 1, 0, 0, 0);
-    Date date = new Date(calendar.getTimeInMillis());
+    LocalDate localDate = LocalDate.of(2020, 1, 1);
     return StockPrice.builder()
         .id(100L)
         .symbol("IBM")
-        .date(date)
+        .date(localDate)
         .prices(defaultStockPriceInfoData().build());
   }
 
@@ -95,15 +94,13 @@ public class TestDataGenerator {
     Random rand = new Random();
     List<StockPrice> stockPrices = new ArrayList<>();
     for (int i = 0; i < num; i++) {
-      Calendar calendar = Calendar.getInstance();
       int year = rand.nextInt(30) + 1980;
       int dayOfYear = rand.nextInt(365) + 1;
 
-      calendar.set(Calendar.YEAR, year);
-      calendar.set(Calendar.DAY_OF_YEAR, dayOfYear);
+      LocalDate localDate = LocalDate.ofYearDay(year, dayOfYear);
 
       stockPrices.add(StockPrice.builder()
-          .date(new Date(calendar.getTimeInMillis()))
+          .date(localDate)
           .prices(TestDataGenerator.defaultStockPriceInfoData().build())
           .symbol(symbol)
           .id((long) i).build());
@@ -119,7 +116,8 @@ public class TestDataGenerator {
         .open(new BigDecimal(0))
         .high(new BigDecimal(0))
         .low(new BigDecimal(0))
-        .close(new BigDecimal(0));
+        .close(new BigDecimal(0))
+        .volume(100L);
   }
 
   /**
@@ -136,7 +134,7 @@ public class TestDataGenerator {
   public static StockPriceMessage.StockPriceMessageBuilder defaultStockPriceMessageData() {
     return StockPriceMessage.builder()
         .symbol("IBM")
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .stockInfo(TestDataGenerator.defaultStockPriceInfoMessageData().build());
   }
 

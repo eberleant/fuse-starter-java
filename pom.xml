@@ -183,6 +183,12 @@
 			<version>2.9.10.3</version>
 		</dependency>
 
+		<!-- support Java 8 features (like LocalDate) -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+		</dependency>
+
 		<!-- JAXB - converting between POJOs and XML -->
 		<dependency>
 			<groupId>com.sun.activation</groupId>

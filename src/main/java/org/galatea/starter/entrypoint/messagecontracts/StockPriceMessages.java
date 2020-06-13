@@ -10,9 +10,10 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.utils.Helpers;
-import org.galatea.starter.utils.translation.TranslationException;
 
+@Slf4j
 @AllArgsConstructor(access = AccessLevel.PRIVATE) // for builder
 @Builder
 @Data
@@ -31,7 +32,6 @@ public class StockPriceMessages {
       @JsonProperty("Meta Data") final Map<String, String> metadata,
       @JsonProperty("Time Series (Daily)") final Map<String, StockPriceInfoMessage> timeSeries) {
     String symbol = metadata.get("2. Symbol");
-    assert symbol != null;
     this.data = extractData(symbol, timeSeries);
   }
 

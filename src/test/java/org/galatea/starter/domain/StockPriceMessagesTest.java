@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,7 +77,7 @@ public class StockPriceMessagesTest extends ASpringTest {
     dataNode.put("5. volume", "100");
 
     ObjectNode data = mapper.createObjectNode();
-    data.set(new Date(0).toString(), dataNode);
+    data.set(LocalDate.ofEpochDay(0).toString(), dataNode);
 
     ObjectNode root = mapper.createObjectNode();
     root.set("Meta Data", metadata);
@@ -87,7 +88,7 @@ public class StockPriceMessagesTest extends ASpringTest {
 
     StockPriceMessage stockPriceMessage = StockPriceMessage.builder()
         .symbol("IBM")
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .stockInfo(StockPriceInfoMessage.builder()
             .open(new BigDecimal("0.00"))
             .high(new BigDecimal("0.00"))
@@ -152,34 +153,6 @@ public class StockPriceMessagesTest extends ASpringTest {
 
     ObjectNode root = mapper.createObjectNode();
 //    root.set("Meta Data", metadata);
-    root.set("Time Series (Daily)", data);
-
-    mapper.readValue(mapper.writeValueAsString(root),
-        StockPriceMessages.class);
-
-    assertTrue("Should have thrown TranslationException", false);
-  }
-
-  @SneakyThrows
-  @Test(expected = InvalidDefinitionException.class)
-  public void invalidStockPriceMessagesFromJsonNoSymbol() {
-    ObjectMapper mapper = new ObjectMapper();
-
-    ObjectNode metadata = mapper.createObjectNode();
-//    metadata.put("2. Symbol", "IBM");
-
-    ObjectNode dataNode = mapper.createObjectNode();
-    dataNode.put("1. open", "0.00");
-    dataNode.put("2. high", "0.00");
-    dataNode.put("3. low", "0.00");
-    dataNode.put("4. close", "0.00");
-    dataNode.put("5. volume", "100");
-
-    ObjectNode data = mapper.createObjectNode();
-    data.set(new Date(0).toString(), dataNode);
-
-    ObjectNode root = mapper.createObjectNode();
-    root.set("Meta Data", metadata);
     root.set("Time Series (Daily)", data);
 
     mapper.readValue(mapper.writeValueAsString(root),

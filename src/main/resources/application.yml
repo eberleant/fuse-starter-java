@@ -12,7 +12,7 @@ spring:
 #      url: jdbc:h2:mem:testtest
 #      driver-class-name: org.h2.Driver
       driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/db_example?serverTimezone=UTC&useLegacyDatetimeCode=false
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/db_example?serverTimezone=EST&useLegacyDatetimeCode=false
       username: springuser
       password: ThePassword
    jpa:

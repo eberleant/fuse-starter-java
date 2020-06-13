@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -245,7 +246,7 @@ public class StockPriceServiceTest extends ASpringTest {
   public void testHasNecessaryStockPricesNotUpToDate() {
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .symbol("IBM").build());
     assertFalse(service.hasNecessaryStockPrices(stockPrices, 5));

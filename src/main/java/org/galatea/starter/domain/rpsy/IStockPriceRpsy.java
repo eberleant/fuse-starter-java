@@ -1,6 +1,6 @@
 package org.galatea.starter.domain.rpsy;
 
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.galatea.starter.domain.StockPrice;
@@ -15,7 +15,7 @@ public interface IStockPriceRpsy extends CrudRepository<StockPrice, Long> {
    * @param date date of all returned StockPrice objects
    * @return
    */
-  List<StockPrice> findBySymbolIgnoreCaseAndDate(String symbol, Date date);
+  List<StockPrice> findBySymbolIgnoreCaseAndDate(String symbol, LocalDate date);
 
   /**
    * Return a list of all StockPrice objects in the database with the given symbol, sorted by

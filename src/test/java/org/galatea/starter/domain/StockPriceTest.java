@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -34,7 +35,7 @@ public class StockPriceTest extends ASpringTest {
   public void validStockPrice() {
     StockPrice sp = StockPrice.builder()
         .symbol("IBM")
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .prices(StockPriceInfo.builder()
             .open(new BigDecimal(0))
             .high(new BigDecimal(0))
@@ -54,7 +55,7 @@ public class StockPriceTest extends ASpringTest {
     String symbol = "ibm";
     StockPrice sp = StockPrice.builder()
         .symbol(symbol)
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build()).build();
 
     Set<ConstraintViolation<StockPrice>> constraintViolations = validator.validate(sp);
@@ -71,7 +72,7 @@ public class StockPriceTest extends ASpringTest {
   public void symbolMustNotBeEmpty() {
     StockPrice sp = StockPrice.builder()
         .symbol("")
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build()).build();
 
     Set<ConstraintViolation<StockPrice>> constraintViolations = validator.validate(sp);
@@ -88,7 +89,7 @@ public class StockPriceTest extends ASpringTest {
   public void symbolNonNull() {
     try {
       StockPrice.builder()
-          .date(new Date(0))
+          .date(LocalDate.ofEpochDay(0))
           .prices(TestDataGenerator.defaultStockPriceInfoData().build()).build();
       assertTrue("StockPrice with null symbol was allowed to be built", false);
     } catch (NullPointerException npe) {
@@ -118,7 +119,7 @@ public class StockPriceTest extends ASpringTest {
   public void pricesMustBeValid() {
     StockPrice sp = StockPrice.builder()
         .symbol("IBM")
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .prices(StockPriceInfo.builder()
             .open(new BigDecimal(-1))
             .high(new BigDecimal(0))
@@ -139,12 +140,12 @@ public class StockPriceTest extends ASpringTest {
   public void testEqualsTrue() {
     StockPrice sp1 = StockPrice.builder()
         .symbol("IBM")
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .id(1L).build();
     StockPrice sp2 = StockPrice.builder()
         .symbol("IBM")
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .id(2L).build();
 
@@ -158,7 +159,7 @@ public class StockPriceTest extends ASpringTest {
   public void testEqualsFalse() {
     StockPrice sp1 = StockPrice.builder()
         .symbol("IBM")
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .id(1L).build();
     StockPrice sp2 = StockPrice.builder()
@@ -170,7 +171,7 @@ public class StockPriceTest extends ASpringTest {
     assertFalse(sp1.equals(sp2)); // different symbols
 
     sp2.setSymbol(sp1.getSymbol());
-    sp2.setDate(new Date(1));
+    sp2.setDate(LocalDate.ofEpochDay(1));
 
     assertFalse(sp1.equals(sp2)); // different dates
 

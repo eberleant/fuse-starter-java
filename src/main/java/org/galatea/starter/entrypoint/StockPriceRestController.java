@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.domain.rpsy.IStockPriceRpsy;
 import org.galatea.starter.service.StockPriceService;
-import org.galatea.starter.utils.Helpers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
@@ -72,7 +71,7 @@ public class StockPriceRestController extends BaseRestController {
     metadata.put("description", "Daily stock prices (open)"); // should i use open or?
     metadata.put("symbol", symbol);
     metadata.put("days", days);
-    metadata.put("request-date", Helpers.getDateNDaysAgo(0).toString());
+    metadata.put("timezone", "America/New_York");
     return metadata;
   }
 }

@@ -1,6 +1,6 @@
 package org.galatea.starter.entrypoint.messagecontracts;
 
-import java.sql.Date;
+import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Value;
 
@@ -9,7 +9,7 @@ import lombok.Value;
 public class StockPriceMessage {
   String symbol;
 
-  Date date;
+  LocalDate date;
 
   StockPriceInfoMessage stockInfo;
 

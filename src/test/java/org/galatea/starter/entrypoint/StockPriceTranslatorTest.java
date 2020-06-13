@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import org.galatea.starter.ASpringTest;
@@ -34,7 +35,7 @@ public class StockPriceTranslatorTest extends ASpringTest {
     StockPriceMessage message = TestDataGenerator.defaultStockPriceMessageData().build();
     StockPrice stockPrice = StockPrice.builder()
         .symbol("IBM")
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .build();
 
@@ -48,7 +49,7 @@ public class StockPriceTranslatorTest extends ASpringTest {
     StockPriceMessages messages = TestDataGenerator.defaultStockPriceMessagesData().build();
     StockPrice stockPrice = StockPrice.builder()
         .symbol("IBM")
-        .date(new Date(0))
+        .date(LocalDate.ofEpochDay(0))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .build();
     List<StockPrice> stockPrices = Collections.singletonList(stockPrice);

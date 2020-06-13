@@ -2,7 +2,9 @@ package org.galatea.starter.domain;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.sql.Date;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import java.time.LocalDate;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -39,9 +41,10 @@ public class StockPrice {
   @NonNull
   private String symbol;
 
-  @JsonFormat(pattern = "yyyy-MM-dd")
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+  @JsonSerialize(using = LocalDateSerializer.class)
   @NonNull
-  private Date date;
+  private LocalDate date;
 
   @NonNull
   @Valid

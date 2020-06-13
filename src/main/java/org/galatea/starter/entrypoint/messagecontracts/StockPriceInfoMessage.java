@@ -7,12 +7,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.Setter;
-import lombok.Value;
-import org.springframework.validation.annotation.Validated;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE) // for Jackson
 @AllArgsConstructor(access = AccessLevel.PRIVATE) // for builder
@@ -26,7 +21,7 @@ public class StockPriceInfoMessage {
   @JsonProperty("2. high")
   private BigDecimal high;
 
-  @JsonProperty(value = "3. low", defaultValue = "0")
+  @JsonProperty("3. low")
   private BigDecimal low;
 
   @JsonProperty("4. close")

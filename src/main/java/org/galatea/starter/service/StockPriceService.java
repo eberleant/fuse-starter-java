@@ -3,7 +3,7 @@ package org.galatea.starter.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import java.net.URL;
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NonNull;
@@ -16,7 +16,6 @@ import org.galatea.starter.entrypoint.exception.DataNotFoundException;
 import org.galatea.starter.entrypoint.messagecontracts.StockPriceMessages;
 import org.galatea.starter.utils.Helpers;
 import org.galatea.starter.utils.translation.ITranslator;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -122,11 +121,11 @@ public class StockPriceService {
       log.info("Does not have necessary stock prices because List is empty");
       return false;
     } else {
-      Date mostRecentStockPrice = stockPrices.get(0).getDate();
-      Date mostRecentWeekday = Helpers.getMostRecentWeekday();
+      LocalDate mostRecentStockPrice = stockPrices.get(0).getDate();
+      LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday();
       log.info("Most recent stock price: {}", mostRecentStockPrice);
       log.info("Most recent weekday: {}", mostRecentWeekday);
-      return !mostRecentWeekday.after(mostRecentStockPrice) && stockPrices.size() >= days;
+      return !mostRecentWeekday.isAfter(mostRecentStockPrice) && stockPrices.size() >= days;
     }
   }
 

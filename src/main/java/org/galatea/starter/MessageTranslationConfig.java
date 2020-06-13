@@ -83,7 +83,8 @@ public class MessageTranslationConfig {
         .open(message.getOpen())
         .high(message.getHigh())
         .low(message.getLow())
-        .close(message.getClose()).build();
+        .close(message.getClose())
+        .volume(message.getVolume()).build();
   }
 
   /**

@@ -4,15 +4,10 @@ import static org.springframework.util.ReflectionUtils.doWithMethods;
 import static org.springframework.util.ReflectionUtils.invokeMethod;
 
 import java.lang.reflect.Modifier;
-import java.sql.Date;
-import java.time.Duration;
-import java.time.Instant;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
-import java.util.TimeZone;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,39 +49,12 @@ public class Helpers {
   }
 
   /**
-   * Converts String representation of date (yyyy-MM-dd) into instance of java.sql.Date class.
-   * @param strDate string representation of date using pattern yyyy-MM-dd
+   * Converts String representation of date (yyyy-MM-dd) into LocalDate object.
+   * @param strDate string representation of []
    * @return
    */
-  public static Date stringToDate(final String strDate) {
-    String[] strDateSplit = strDate.split("-");
-    int year = Integer.parseInt(strDateSplit[0]);
-    int month = Integer.parseInt(strDateSplit[1]) - 1; // Calendar months start at 0
-    int day = Integer.parseInt(strDateSplit[2]);
-    Calendar calendar = Calendar.getInstance();
-    calendar.setTimeZone(TimeZone.getTimeZone("Universal"));
-    calendar.set(year, month, day, 0, 0, 0);
-    return getStartOfDay(new Date(calendar.getTimeInMillis()));
-  }
-
-  /**
-   * Given a Date object, returns a new Date with the same year, month, and day but time 00:00 UTC.
-   * @param date any date
-   * @return
-   */
-  public static Date getStartOfDay(final Date date) {
-    // Calendar calendar = Calendar.getInstance();
-    // calendar.setTimeZone(TimeZone.getTimeZone("Universal"));
-    // calendar.setTime(date);
-    // ZoneId zoneId = ZoneId.of("Universal");
-    // LocalDate today = LocalDate.of(
-    //     calendar.get(Calendar.YEAR),
-    //     calendar.get(Calendar.MONTH) + 1,
-    //     calendar.get(Calendar.DAY_OF_MONTH));
-    // ZonedDateTime zdtStart = today.atStartOfDay(zoneId);
-    // return new Date(Date.from(zdtStart.toInstant()).getTime());
-    int days = (int) (date.getTime() / (1000L * 60 * 60 * 24));
-    return new Date(days * 24L * 60 * 60 * 1000);
+  public static LocalDate stringToDate(final String strDate) {
+    return LocalDate.parse(strDate);
   }
 
   /**
@@ -94,38 +62,32 @@ public class Helpers {
    * @param daysAgo number of days ago to return
    * @return
    */
-  public static Date getDateNDaysAgo(final int daysAgo) {
-    return new Date(Date.from(Instant.now().minus(Duration.ofDays(daysAgo))).getTime());
+  public static LocalDate getDateNDaysAgo(final long daysAgo) {
+    return LocalDate.now(ZoneId.of("America/New_York")).minusDays(daysAgo);
   }
 
   /**
-   * Get the most recent weekday based on the current day. If it is before 5pm Eastern,
+   * Get the most recent weekday based on the current day. If it is before 4pm Eastern,
    * which is around when Alpha Vantage's API updates for the day, then the most recent weekday
    * is calculated from the previous day, instead of the current day.
    * @return
    */
-  public static Date getMostRecentWeekday() {
-    Calendar endOfWorkday = Calendar.getInstance();
-    endOfWorkday.setTimeZone(TimeZone.getTimeZone("Universal"));
-    endOfWorkday.setTime(getDateNDaysAgo(0));
-    endOfWorkday.set(Calendar.HOUR_OF_DAY, 21); // 5PM ET
-
-    Calendar currentDate = Calendar.getInstance();
-    currentDate.setTimeZone(TimeZone.getTimeZone("Universal"));
-    currentDate.setTime(new Date(Instant.now().toEpochMilli())); // current time
+  public static LocalDate getMostRecentWeekday() {
+    LocalTime now = LocalTime.now(ZoneId.of("America/New_York"));
+    LocalTime endOfWorkday = LocalTime.of(16, 10); // 4PM = closing time of NYSE
 
     int offset = 0;
-    if (currentDate.before(endOfWorkday)) { // if current time before 5PM, treat as yesterday
-      currentDate.setTime(getDateNDaysAgo(1));
+    if (now.isBefore(endOfWorkday)) {
       offset++;
     }
 
-    if (currentDate.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
-      return getStartOfDay(getDateNDaysAgo(2 + offset));
-    } else if (currentDate.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
-      return getStartOfDay(getDateNDaysAgo(1 + offset));
+    LocalDate today = getDateNDaysAgo(offset);
+    if (today.getDayOfWeek() == DayOfWeek.SUNDAY) {
+      return getDateNDaysAgo(2 + offset);
+    } else if (today.getDayOfWeek() == DayOfWeek.SATURDAY) {
+      return getDateNDaysAgo(1 + offset);
     } else {
-      return getStartOfDay(getDateNDaysAgo(offset));
+      return getDateNDaysAgo(offset);
     }
   }
 }
