@@ -3,6 +3,7 @@ package org.galatea.starter.entrypoint.messagecontracts;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +32,10 @@ public class StockPriceMessages {
   private StockPriceMessages(
       @JsonProperty("Meta Data") final Map<String, String> metadata,
       @JsonProperty("Time Series (Daily)") final Map<String, StockPriceInfoMessage> timeSeries) {
+
     String symbol = metadata.get("2. Symbol");
     this.data = extractData(symbol, timeSeries);
+
   }
 
   /**
@@ -43,11 +46,22 @@ public class StockPriceMessages {
    */
   private List<StockPriceMessage> extractData(final String symbol,
       final Map<String, StockPriceInfoMessage> timeSeries) {
+
     List<StockPriceMessage> data = new ArrayList<>();
-    timeSeries.forEach((date, info) -> data.add(StockPriceMessage.builder()
-        .symbol(symbol)
-        .date(Helpers.stringToDate(date))
-        .stockInfo(info).build()));
+
+    timeSeries.forEach((date, info) -> {
+      // don't add if day is incomplete - users are expecting stock price info for the last X days,
+      // so all returned data should be accurate to the day
+      LocalDate stockDate = Helpers.stringToDate(date);
+      LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday();
+      if (!stockDate.isAfter(mostRecentWeekday)) {
+        data.add(StockPriceMessage.builder()
+            .symbol(symbol)
+            .date(stockDate)
+            .stockInfo(info).build());
+      }
+    });
+
     return data;
   }
 }
