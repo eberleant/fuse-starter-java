@@ -5,13 +5,14 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.sql.Date;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.ASpringTest;
 import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.domain.rpsy.IStockPriceRpsy;
@@ -22,23 +23,22 @@ import org.galatea.starter.utils.translation.ITranslator;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.BDDMockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.util.ReflectionTestUtils;
 
+@Slf4j
 // from https://stackoverflow.com/questions/21271468/spring-propertysource-using-yaml
 // why does it work?
 @TestPropertySource("classpath:application.yml")
 @ContextConfiguration(initializers = {ConfigFileApplicationContextInitializer.class})
-@Import({StockPriceService.class})
+@SpringBootTest
 public class StockPriceServiceTest extends ASpringTest {
 
   @MockBean
@@ -46,6 +46,8 @@ public class StockPriceServiceTest extends ASpringTest {
 
   @MockBean
   private ITranslator<StockPriceMessages, List<StockPrice>> mockStockMessagesTranslator;
+
+  private Clock clock;
 
   private StockPriceService service;
 
@@ -57,13 +59,12 @@ public class StockPriceServiceTest extends ASpringTest {
 
   @Before
   public void setup() {
+    clock = Clock.system(ZoneId.of("America/New_York"));
     service = new StockPriceService(
         mockStockPriceRpsy,
-        mockStockMessagesTranslator
+        mockStockMessagesTranslator,
+        clock
     );
-
-    ReflectionTestUtils.setField(service, "apiKey", apiKey);
-    ReflectionTestUtils.setField(service, "basePath", basePath);
   }
 
   /**
@@ -260,7 +261,7 @@ public class StockPriceServiceTest extends ASpringTest {
   public void testHasNecessaryStockPricesNotEnoughHistory() {
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
-        .date(Helpers.getMostRecentWeekday())
+        .date(Helpers.getMostRecentWeekday(clock))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .symbol("IBM").build());
     assertFalse(service.hasNecessaryStockPrices(stockPrices, 15));
@@ -274,7 +275,7 @@ public class StockPriceServiceTest extends ASpringTest {
   public void testHasNecessaryStockPricesEqualSize() {
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
-        .date(Helpers.getMostRecentWeekday())
+        .date(Helpers.getMostRecentWeekday(clock))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .symbol("IBM").build());
     assertTrue(service.hasNecessaryStockPrices(stockPrices, 10));
@@ -288,7 +289,7 @@ public class StockPriceServiceTest extends ASpringTest {
   public void testHasNecessaryStockPricesGreaterSize() {
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
-        .date(Helpers.getMostRecentWeekday())
+        .date(Helpers.getMostRecentWeekday(clock))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .symbol("IBM").build());
     assertTrue(service.hasNecessaryStockPrices(stockPrices, 5));

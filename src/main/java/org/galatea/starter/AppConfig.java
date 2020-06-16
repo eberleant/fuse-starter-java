@@ -1,20 +1,17 @@
 package org.galatea.starter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Logger;
-import java.text.SimpleDateFormat;
+import java.time.Clock;
+import java.time.ZoneId;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.aspect4log.aspect.LogAspect;
 import org.galatea.starter.domain.SettlementMission;
 import org.galatea.starter.service.IAgreementTransformer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
-import org.springframework.context.annotation.Primary;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 @Slf4j
 @Configuration
@@ -22,6 +19,15 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 @EnableCaching
 @EnableFeignClients
 public class AppConfig {
+
+  /**
+   * Create a Clock with America/New_York time zone to use with StockPrice API.
+   * @return
+   */
+  @Bean
+  public Clock createClock() {
+    return Clock.system(ZoneId.of("America/New_York"));
+  }
 
   /**
    * Create a LogAspect for use with the SpringAOP @Log annotation.

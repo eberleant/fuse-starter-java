@@ -33,11 +33,8 @@ public class StockPriceService {
   @NonNull
   ITranslator<StockPriceMessages, List<StockPrice>> stockMessagesTranslator;
 
-  @Value("${alpha-vantage.api-key}")
-  private String apiKey;
-
-  @Value("${alpha-vantage.dailyTimeSeriesPath}")
-  private String basePath;
+  @NonNull
+  Clock clock;
 
   /**
    * Return a list (in Date descending order) containing the most recently available stock price
@@ -149,7 +146,7 @@ public class StockPriceService {
       return false;
     } else {
       LocalDate mostRecentStockPrice = stockPrices.get(0).getDate();
-      LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday();
+      LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday(clock);
       log.info("Most recent stock price: {}", mostRecentStockPrice);
       log.info("Most recent weekday: {}", mostRecentWeekday);
       return !mostRecentWeekday.isAfter(mostRecentStockPrice) && stockPrices.size() >= days;

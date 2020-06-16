@@ -4,6 +4,7 @@ import static org.springframework.util.ReflectionUtils.doWithMethods;
 import static org.springframework.util.ReflectionUtils.invokeMethod;
 
 import java.lang.reflect.Modifier;
+import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -62,8 +63,8 @@ public class Helpers {
    * @param daysAgo number of days ago to return
    * @return
    */
-  public static LocalDate getDateNDaysAgo(final long daysAgo) {
-    return LocalDate.now(ZoneId.of("America/New_York")).minusDays(daysAgo);
+  public static LocalDate getDateNDaysAgo(final Clock clock, final long daysAgo) {
+    return LocalDate.now(clock).minusDays(daysAgo);
   }
 
   /**
@@ -72,8 +73,8 @@ public class Helpers {
    * is calculated from the previous day, instead of the current day.
    * @return
    */
-  public static LocalDate getMostRecentWeekday() {
-    LocalTime now = LocalTime.now(ZoneId.of("America/New_York"));
+  public static LocalDate getMostRecentWeekday(final Clock clock) {
+    LocalTime now = LocalTime.now(clock);
     LocalTime endOfWorkday = LocalTime.of(16, 10); // 4PM = closing time of NYSE
 
     int offset = 0;
@@ -81,13 +82,13 @@ public class Helpers {
       offset++;
     }
 
-    LocalDate today = getDateNDaysAgo(offset);
+    LocalDate today = getDateNDaysAgo(clock, offset);
     if (today.getDayOfWeek() == DayOfWeek.SUNDAY) {
-      return getDateNDaysAgo(2 + offset);
+      return getDateNDaysAgo(clock, 2 + offset);
     } else if (today.getDayOfWeek() == DayOfWeek.SATURDAY) {
-      return getDateNDaysAgo(1 + offset);
+      return getDateNDaysAgo(clock, 1 + offset);
     } else {
-      return getDateNDaysAgo(offset);
+      return getDateNDaysAgo(clock, offset);
     }
   }
 }

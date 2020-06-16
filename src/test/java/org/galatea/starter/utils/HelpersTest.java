@@ -1,16 +1,14 @@
 package org.galatea.starter.utils;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
-import java.math.BigDecimal;
-import java.sql.Date;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneId;
-import java.util.Calendar;
-import java.util.TimeZone;
+import java.time.ZonedDateTime;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -40,6 +38,11 @@ public class HelpersTest {
     private long getNanoTime() {
       return System.nanoTime();
     }
+  }
+
+  private Clock createClock(String strDate, String zoneId) {
+    Instant instant = ZonedDateTime.of(LocalDateTime.parse(strDate), ZoneId.of(zoneId)).toInstant();
+    return Clock.fixed(instant, ZoneId.of(zoneId));
   }
 
   @Test
@@ -83,11 +86,94 @@ public class HelpersTest {
 
   @Test
   public void testGetDateNDaysAgo() {
-    LocalDate today = LocalDate.now(ZoneId.of("America/New_York"));
+    Clock clock = createClock("2020-06-15T12:00:00", "America/New_York");
 
-    LocalDate fiveDaysAgo = Helpers.getDateNDaysAgo(5);
+    LocalDate today = LocalDate.now(clock);
 
-    assertEquals(today.toEpochDay(), fiveDaysAgo.toEpochDay() + 5);
+    LocalDate fiveDaysAgo = Helpers.getDateNDaysAgo(clock, 5);
+
+    assertEquals(today.toEpochDay(), fiveDaysAgo.plusDays(5).toEpochDay());
+  }
+
+  @Test
+  public void testGetMostRecentWeekdaySaturday() {
+    Clock clock = createClock("2020-06-13T12:00:00", "America/New_York");
+
+    LocalDate saturday = LocalDate.now(clock);
+
+    LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday(clock);
+
+    assertEquals(saturday.minusDays(1L).toEpochDay(), mostRecentWeekday.toEpochDay());
+  }
+
+  @Test
+  public void testGetMostRecentWeekdaySunday() {
+    Clock clock = createClock("2020-06-14T12:00:00", "America/New_York");
+
+    LocalDate sunday = LocalDate.now(clock);
+
+    LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday(clock);
+
+    assertEquals(sunday.minusDays(2L).toEpochDay(), mostRecentWeekday.toEpochDay());
+  }
+
+  @Test
+  public void testGetMostRecentWeekdayWeekendTimeDoesNotMatter() {
+    Clock midnight = createClock("2020-06-14T00:00:00", "America/New_York");
+    Clock morning = createClock("2020-06-14T09:00:00", "America/New_York");
+    Clock noon = createClock("2020-06-14T12:00:00", "America/New_York");
+    Clock evening = createClock("2020-06-14T18:00:00", "America/New_York");
+
+    assertEquals(Helpers.getMostRecentWeekday(midnight).toEpochDay(),
+        Helpers.getMostRecentWeekday(morning).toEpochDay());
+    assertEquals(Helpers.getMostRecentWeekday(morning).toEpochDay(),
+        Helpers.getMostRecentWeekday(noon).toEpochDay());
+    assertEquals(Helpers.getMostRecentWeekday(noon).toEpochDay(),
+        Helpers.getMostRecentWeekday(evening).toEpochDay());
+  }
+
+  @Test
+  public void testGetMostRecentWeekdayMondayIncomplete() {
+    Clock clock = createClock("2020-06-15T12:00:00", "America/New_York");
+
+    LocalDate monday = LocalDate.now(clock);
+
+    LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday(clock);
+
+    assertEquals(monday.minusDays(3L).toEpochDay(), mostRecentWeekday.toEpochDay());
+  }
+
+  @Test
+  public void testGetMostRecentWeekdayMondayComplete() {
+    Clock clock = createClock("2020-06-15T17:00:00", "America/New_York");
+
+    LocalDate monday = LocalDate.now(clock);
+
+    LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday(clock);
+
+    assertEquals(monday.toEpochDay(), mostRecentWeekday.toEpochDay());
+  }
+
+  @Test
+  public void testGetMostRecentWeekdayMidweekIncomplete() {
+    Clock clock = createClock("2020-06-17T12:00:00", "America/New_York");
+
+    LocalDate wednesday = LocalDate.now(clock);
+
+    LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday(clock);
+
+    assertEquals(wednesday.minusDays(1L).toEpochDay(), mostRecentWeekday.toEpochDay());
+  }
+
+  @Test
+  public void testGetMostRecentWeekdayMidweekComplete() {
+    Clock clock = createClock("2020-06-17T17:00:00", "America/New_York");
+
+    LocalDate wednesday = LocalDate.now(clock);
+
+    LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday(clock);
+
+    assertEquals(wednesday.toEpochDay(), mostRecentWeekday.toEpochDay());
   }
 
 }
