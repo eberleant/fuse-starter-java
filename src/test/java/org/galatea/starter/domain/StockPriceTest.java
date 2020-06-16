@@ -48,24 +48,6 @@ public class StockPriceTest extends ASpringTest {
   }
 
   /**
-   * Symbol must be made of only uppercase letters and numbers.
-   */
-  @Test
-  public void symbolMustBeUppercaseLettersAndNumbers() {
-    String symbol = "ibm";
-    StockPrice sp = StockPrice.builder()
-        .symbol(symbol)
-        .date(LocalDate.ofEpochDay(0))
-        .prices(TestDataGenerator.defaultStockPriceInfoData().build()).build();
-
-    Set<ConstraintViolation<StockPrice>> constraintViolations = validator.validate(sp);
-
-    assertEquals("Symbol must consist of only uppercase letters and numbers",
-        constraintViolations.iterator().next().getMessage());
-    assertEquals(1, constraintViolations.size());
-  }
-
-  /**
    * Symbol must not be an empty String.
    */
   @Test

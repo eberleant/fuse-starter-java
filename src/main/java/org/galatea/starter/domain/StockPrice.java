@@ -36,8 +36,6 @@ public class StockPrice {
   private Long id;
 
   @NotEmpty(message = "Symbol must not be empty")
-  @Pattern(regexp = "[A-Z0-9]*",
-      message = "Symbol must consist of only uppercase letters and numbers")
   @NonNull
   private String symbol;
 
