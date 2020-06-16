@@ -15,7 +15,6 @@ import junitparams.JUnitParamsRunner;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.ASpringTest;
-import org.galatea.starter.MessageTranslationConfig;
 import org.galatea.starter.domain.StockPrice;
 import org.galatea.starter.domain.rpsy.IStockPriceRpsy;
 import org.galatea.starter.entrypoint.exception.DataNotFoundException;
@@ -47,7 +46,6 @@ import org.springframework.web.accept.ParameterContentNegotiationStrategy;
 // why does it work?
 @TestPropertySource("classpath:application.yml")
 @ContextConfiguration(initializers = {ConfigFileApplicationContextInitializer.class})
-@Import({MessageTranslationConfig.class})
 // for running parameterized tests (run same test multiple times with different sets of parameters)
 @RunWith(JUnitParamsRunner.class)
 public class StockPriceRestControllerTest extends ASpringTest {

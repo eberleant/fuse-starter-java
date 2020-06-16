@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -25,7 +26,6 @@ import org.junit.Test;
 import org.mockito.BDDMockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,7 +38,6 @@ import org.springframework.test.context.TestPropertySource;
 // why does it work?
 @TestPropertySource("classpath:application.yml")
 @ContextConfiguration(initializers = {ConfigFileApplicationContextInitializer.class})
-@SpringBootTest
 public class StockPriceServiceTest extends ASpringTest {
 
   @MockBean
@@ -47,7 +46,8 @@ public class StockPriceServiceTest extends ASpringTest {
   @MockBean
   private ITranslator<StockPriceMessages, List<StockPrice>> mockStockMessagesTranslator;
 
-  private Clock clock;
+  @MockBean
+  private Clock mockClock;
 
   private StockPriceService service;
 
@@ -59,12 +59,15 @@ public class StockPriceServiceTest extends ASpringTest {
 
   @Before
   public void setup() {
-    clock = Clock.system(ZoneId.of("America/New_York"));
     service = new StockPriceService(
         mockStockPriceRpsy,
         mockStockMessagesTranslator,
-        clock
+        mockClock
     );
+
+    BDDMockito.given(mockClock.instant()).willReturn(Instant.parse("2020-06-15T12:00:00Z"));
+    BDDMockito.given(mockClock.getZone()).willReturn(ZoneId.of("America/New_York"));
+
   }
 
   /**
@@ -261,7 +264,7 @@ public class StockPriceServiceTest extends ASpringTest {
   public void testHasNecessaryStockPricesNotEnoughHistory() {
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
-        .date(Helpers.getMostRecentWeekday(clock))
+        .date(Helpers.getMostRecentWeekday(mockClock))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .symbol("IBM").build());
     assertFalse(service.hasNecessaryStockPrices(stockPrices, 15));
@@ -275,7 +278,7 @@ public class StockPriceServiceTest extends ASpringTest {
   public void testHasNecessaryStockPricesEqualSize() {
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
-        .date(Helpers.getMostRecentWeekday(clock))
+        .date(Helpers.getMostRecentWeekday(mockClock))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .symbol("IBM").build());
     assertTrue(service.hasNecessaryStockPrices(stockPrices, 10));
@@ -289,7 +292,7 @@ public class StockPriceServiceTest extends ASpringTest {
   public void testHasNecessaryStockPricesGreaterSize() {
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices("IBM", 10);
     stockPrices.set(0, StockPrice.builder()
-        .date(Helpers.getMostRecentWeekday(clock))
+        .date(Helpers.getMostRecentWeekday(mockClock))
         .prices(TestDataGenerator.defaultStockPriceInfoData().build())
         .symbol("IBM").build());
     assertTrue(service.hasNecessaryStockPrices(stockPrices, 5));
