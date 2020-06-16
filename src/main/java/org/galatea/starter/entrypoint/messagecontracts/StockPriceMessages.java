@@ -49,18 +49,11 @@ public class StockPriceMessages {
 
     List<StockPriceMessage> data = new ArrayList<>();
 
-    timeSeries.forEach((date, info) -> {
-      // don't add if day is incomplete - users are expecting stock price info for the last X days,
-      // so all returned data should be accurate to the day
-      LocalDate stockDate = Helpers.stringToDate(date);
-      LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday();
-      if (!stockDate.isAfter(mostRecentWeekday)) {
-        data.add(StockPriceMessage.builder()
+    timeSeries.forEach((date, info) -> data.add(StockPriceMessage.builder()
             .symbol(symbol)
-            .date(stockDate)
-            .stockInfo(info).build());
-      }
-    });
+            .date(Helpers.stringToDate(date))
+            .stockInfo(info).build())
+    );
 
     return data;
   }

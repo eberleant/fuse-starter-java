@@ -3,7 +3,10 @@ package org.galatea.starter.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import java.net.URL;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NonNull;
@@ -43,8 +46,10 @@ public class StockPriceService {
    * @param days number of days to get stock price information for
    * @return
    */
-  public List<StockPrice> getStockPrices(final String symbol, final int days) {
-    // make db call
+  public List<StockPrice> getStockPrices(final String symbol, final int days,
+      final String apiKey, final String basePath) {
+
+    // retrieve relevant records from db, sorted by date desc
     List<StockPrice> stockPrices = findStockPricesBySymbol(symbol);
 
     // make api call to AlphaVantage if necessary
@@ -55,24 +60,46 @@ public class StockPriceService {
           result = makeApiCall(symbol, (days > 100 ? "full" : "compact"));
       stockPrices = stockMessagesTranslator.translate(result);
       // store result of api call in db
-      log.info("Most recent stock price to save: {}", stockPrices.get(0).getDate());
       saveStockPricesIfNotExists(stockPrices);
+      // sort stockPrices by date desc
+      Collections.sort(stockPrices, Comparator.comparing(StockPrice::getDate));
+      Collections.reverse(stockPrices);
     }
 
     // filter to only necessary stock prices
-    return findFirstStockPrices(stockPrices, days);
+    return findFirstStockPrices(removeIncompleteData(stockPrices), days);
   }
 
   /**
-   * Return a sublist of the given list of StockPrice objects with the given size.
+   * Return a sublist of the given list of StockPrice objects with the given size, ignoring
+   * StockPrice objects representing days that haven't been completed.
    * If not possible (eg, the given list has size < given size), return the entire list.
-   * @param stockPrices list of StockPrice objects
+   * @param stockPrices list of StockPrice objects, sorted by date desc
    * @param size size of the list to return
    * @return
    */
   public List<StockPrice> findFirstStockPrices(final List<StockPrice> stockPrices, final int size) {
     log.info("Finding {} most recent stock prices", size);
     return stockPrices.subList(0, Math.min(stockPrices.size(), size));
+  }
+
+  /**
+   * Check if the first (most recent) StockPrice object is from a day that isn't complete, which
+   * means its date is after the most recent complete (after 4PM) weekday. If so, remove it.
+   * @param stockPrices list of StockPrice objects, sorted by date desc
+   * @return
+   */
+  public List<StockPrice> removeIncompleteData(final List<StockPrice> stockPrices) {
+    if (stockPrices.isEmpty()) {
+      return stockPrices;
+    }
+
+    LocalDate mostRecentWeekday = Helpers.getMostRecentWeekday(clock);
+    if (stockPrices.get(0).getDate().isAfter(mostRecentWeekday)) {
+      stockPrices.remove(0);
+    }
+
+    return stockPrices;
   }
 
   /**
@@ -95,7 +122,7 @@ public class StockPriceService {
   }
 
   /**
-   * Return all StockPrice records from the database with the given symbol.
+   * Return all StockPrice records from the database with the given symbol, sorted by date desc.
    * @param symbol stock symbol
    * @return
    */
