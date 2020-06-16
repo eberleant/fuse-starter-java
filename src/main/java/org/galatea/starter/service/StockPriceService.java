@@ -19,7 +19,6 @@ import org.galatea.starter.entrypoint.exception.DataNotFoundException;
 import org.galatea.starter.entrypoint.messagecontracts.StockPriceMessages;
 import org.galatea.starter.utils.Helpers;
 import org.galatea.starter.utils.translation.ITranslator;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -51,10 +50,8 @@ public class StockPriceService {
 
     // make api call to AlphaVantage if necessary
     if (!hasNecessaryStockPrices(stockPrices, days)) {
-      // note: if db doesn't have all necessary stock prices, then the records retrieved from db
-      // are not used *at all* (all data comes from API)
-      StockPriceMessages
-          result = makeApiCall(symbol, (days > 100 ? "full" : "compact"));
+      StockPriceMessages result = makeApiCall(symbol, (days > 100 ? "full" : "compact"),
+          apiKey, basePath);
       stockPrices = stockMessagesTranslator.translate(result);
       // store result of api call in db
       saveStockPricesIfNotExists(stockPrices);
@@ -162,7 +159,8 @@ public class StockPriceService {
    * @return
    */
   @SneakyThrows
-  public StockPriceMessages makeApiCall(final String symbol, final String outputSize) {
+  public StockPriceMessages makeApiCall(final String symbol, final String outputSize,
+      final String apiKey, final String basePath) {
     String urlString = basePath
         + "&symbol=" + symbol
         + "&outputsize=" + outputSize

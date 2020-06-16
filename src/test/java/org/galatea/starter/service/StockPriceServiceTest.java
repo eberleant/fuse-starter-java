@@ -300,7 +300,8 @@ public class StockPriceServiceTest extends ASpringTest {
    */
   @Test
   public void testMakeApiCallReturnsNonEmptyJsonNode() {
-    StockPriceMessages stockPriceMessages = service.makeApiCall("IBM", "compact");
+    StockPriceMessages stockPriceMessages = service.makeApiCall("IBM", "compact",
+        apiKey, basePath);
     assertFalse(stockPriceMessages.getData().isEmpty());
   }
 

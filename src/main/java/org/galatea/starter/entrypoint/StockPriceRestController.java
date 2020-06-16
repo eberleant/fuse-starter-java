@@ -28,6 +28,12 @@ public class StockPriceRestController extends BaseRestController {
   @Autowired
   IStockPriceRpsy stockPriceRpsy;
 
+  @Value("${alpha-vantage.api-key}")
+  private String apiKey;
+
+  @Value("${alpha-vantage.dailyTimeSeriesPath}")
+  private String basePath;
+
   ObjectMapper objectMapper = new ObjectMapper();
 
   /**
@@ -49,7 +55,7 @@ public class StockPriceRestController extends BaseRestController {
     processRequestId(requestId);
 
     // get list of StockPrice objects to return
-    List<StockPrice> stockPrices = stockPriceService.getStockPrices(symbol, days);
+    List<StockPrice> stockPrices = stockPriceService.getStockPrices(symbol, days, apiKey, basePath);
 
     // create metadata object
     ObjectNode metadata = getMetadata(symbol, days);

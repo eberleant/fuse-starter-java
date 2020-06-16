@@ -3,16 +3,11 @@ package org.galatea.starter.entrypoint;
 import static io.restassured.module.mockmvc.RestAssuredMockMvc.given;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import io.restassured.response.ResponseOptions;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,12 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.ASpringTest;
 import org.galatea.starter.MessageTranslationConfig;
 import org.galatea.starter.domain.StockPrice;
-import org.galatea.starter.domain.rpsy.ISettlementMissionRpsy;
 import org.galatea.starter.domain.rpsy.IStockPriceRpsy;
-import org.galatea.starter.entrypoint.messagecontracts.StockPriceMessages;
+import org.galatea.starter.entrypoint.exception.DataNotFoundException;
 import org.galatea.starter.service.StockPriceService;
 import org.galatea.starter.testutils.TestDataGenerator;
-import org.galatea.starter.utils.translation.ITranslator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,18 +30,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 import org.springframework.web.accept.ContentNegotiationManager;
 import org.springframework.web.accept.ParameterContentNegotiationStrategy;
@@ -58,22 +47,13 @@ import org.springframework.web.accept.ParameterContentNegotiationStrategy;
 // why does it work?
 @TestPropertySource("classpath:application.yml")
 @ContextConfiguration(initializers = {ConfigFileApplicationContextInitializer.class})
-@Import({MessageTranslationConfig.class, StockPriceService.class})
+@Import({MessageTranslationConfig.class})
 // for running parameterized tests (run same test multiple times with different sets of parameters)
 @RunWith(JUnitParamsRunner.class)
 public class StockPriceRestControllerTest extends ASpringTest {
 
   @Value("${mvc.getPricePath}")
   String pricePath;
-
-  @Value("${alpha-vantage.api-key}")
-  String apiKey;
-
-  @Value("${alpha-vantage.dailyTimeSeriesPath}")
-  String basePath;
-
-  @Autowired
-  private ITranslator<StockPriceMessages, List<StockPrice>> translator;
 
   @MockBean
   private StockPriceService mockStockPriceService;
@@ -86,6 +66,12 @@ public class StockPriceRestControllerTest extends ASpringTest {
 
   private ObjectMapper objectMapper;
 
+  @Value("${alpha-vantage.api-key}")
+  private String apiKey;
+
+  @Value("${alpha-vantage.dailyTimeSeriesPath}")
+  private String basePath;
+
   @Before
   public void setup() {
     Map<String, MediaType> mediaTypes = new HashMap<>();
@@ -96,18 +82,6 @@ public class StockPriceRestControllerTest extends ASpringTest {
 
     ContentNegotiationManager manager =
         new ContentNegotiationManager(parameterContentNegotiationStrategy);
-
-    BDDMockito.given(this.mockStockPriceService.getStockPrices(anyString(), anyInt()))
-        .willCallRealMethod();
-    BDDMockito.given(this.mockStockPriceService.makeApiCall(anyString(), anyString()))
-        .willCallRealMethod();
-    BDDMockito.given(this.mockStockPriceService.findFirstStockPrices(any(), anyInt()))
-        .willCallRealMethod();
-
-    ReflectionTestUtils.setField(mockStockPriceService, "apiKey", apiKey);
-    ReflectionTestUtils.setField(mockStockPriceService, "basePath", basePath);
-    ReflectionTestUtils.setField(mockStockPriceService, "stockMessagesTranslator", translator);
-//    ReflectionTestUtils.setField(mockStockPriceService, "stockPriceRpsy", mockStockPriceRpsy);
 
     objectMapper = new ObjectMapper();
 
@@ -143,10 +117,8 @@ public class StockPriceRestControllerTest extends ASpringTest {
     int days = 5;
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices(symbol, 10);
 
-    BDDMockito.given(this.mockStockPriceService.findStockPricesBySymbol(symbol))
+    BDDMockito.given(this.mockStockPriceService.getStockPrices(symbol, days, apiKey, basePath))
         .willReturn(stockPrices);
-    BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(stockPrices, days))
-        .willReturn(true);
 
     ResponseOptions response = callGetPrices(symbol, days);
 
@@ -156,19 +128,18 @@ public class StockPriceRestControllerTest extends ASpringTest {
   }
 
   /**
-   * Test that returned JSON from /price has correct data array size when no API call is needed.
+   * Test that returned JSON from /price has correct data array size (same as returned from service)
+   * when no API call is needed.
    */
   @SneakyThrows
   @Test
-  public void testGetPricesNoAPICallDataSize_JSON() {
+  public void testGetPricesDataSize_JSON() {
     String symbol = "IBM";
     int days = 5;
-    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices(symbol, 10);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices(symbol, 5);
 
-    BDDMockito.given(this.mockStockPriceService.findStockPricesBySymbol(symbol))
+    BDDMockito.given(this.mockStockPriceService.getStockPrices(symbol, days, apiKey, basePath))
         .willReturn(stockPrices);
-    BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(stockPrices, days))
-        .willReturn(true);
 
     ResponseOptions response = callGetPrices(symbol, days);
 
@@ -187,10 +158,8 @@ public class StockPriceRestControllerTest extends ASpringTest {
     int days = 5;
     List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices(symbol, 10);
 
-    BDDMockito.given(this.mockStockPriceService.findStockPricesBySymbol(symbol))
+    BDDMockito.given(this.mockStockPriceService.getStockPrices(symbol, days, apiKey, basePath))
         .willReturn(stockPrices);
-    BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(stockPrices, days))
-        .willReturn(true);
 
     ResponseOptions response = callGetPrices(symbol, days);
     System.out.println(response.getBody().asString());
@@ -206,29 +175,6 @@ public class StockPriceRestControllerTest extends ASpringTest {
   }
 
   /**
-   * Test that returned JSON from /price has correct data array size when API call is needed.
-   */
-  @SneakyThrows
-  @Test
-  public void testGetPricesWithAPICallDataSize_JSON() {
-    String symbol = "IBM";
-    int days = 5;
-    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices(symbol, 10);
-
-    BDDMockito.given(this.mockStockPriceService.findStockPricesBySymbol(symbol))
-        .willReturn(stockPrices);
-    BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(stockPrices, days))
-        .willReturn(false);
-    BDDMockito.given(this.mockStockPriceService.saveStockPricesIfNotExists(any()))
-        .willReturn(null);
-
-    ResponseOptions response = callGetPrices(symbol, days);
-    log.info("Response body: {}", response.getBody().asString());
-    JsonNode data = objectMapper.readTree(response.getBody().asString()).get("data");
-    assertEquals(days, data.size());
-  }
-
-  /**
    * Missing symbol causes Bad Request response and appropriate error message.
    */
   @SneakyThrows
@@ -236,12 +182,7 @@ public class StockPriceRestControllerTest extends ASpringTest {
   public void testGetPricesMissingSymbol() {
     int days = 5;
 
-    ResponseOptions response = null;
-    try {
-      response = callGetPrices(pricePath + "?days=" + days);
-    } catch (Exception e) {
-      System.out.println(e.getClass());
-    }
+    ResponseOptions response = callGetPrices(pricePath + "?days=" + days);
 
     assertEquals(400, response.getStatusCode());
     JsonNode error = objectMapper.readTree(response.getBody().asString());
@@ -260,14 +201,11 @@ public class StockPriceRestControllerTest extends ASpringTest {
     String symbol = "sljsfjlksf";
     int days = 5;
 
-    BDDMockito.given(this.mockStockPriceService.findStockPricesBySymbol(symbol))
-        .willReturn(new ArrayList<>());
-    BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(any(), anyInt()))
-        .willReturn(false);
-    BDDMockito.given(this.mockStockPriceService.saveStockPricesIfNotExists(any()))
-        .willReturn(null);
+    BDDMockito.given(mockStockPriceService.getStockPrices(symbol, days, apiKey, basePath))
+        .willThrow(new DataNotFoundException(symbol));
 
     ResponseOptions response = callGetPrices(symbol, days);
+
     assertEquals(404, response.getStatusCode());
     JsonNode error = objectMapper.readTree(response.getBody().asString());
 
@@ -277,45 +215,16 @@ public class StockPriceRestControllerTest extends ASpringTest {
   }
 
   /**
-   * Symbol upper/lower case does not affect results.
-   */
-  @SneakyThrows
-  @Test
-  public void testGetPricesSymbolCaseDoesNotAffectData() {
-    String symbol = "ibm";
-    int days = 5;
-    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices(symbol, 10);
-
-    BDDMockito.given(this.mockStockPriceService.findStockPricesBySymbol(symbol))
-        .willReturn(stockPrices);
-    BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(stockPrices, days))
-        .willReturn(false);
-    BDDMockito.given(this.mockStockPriceService.saveStockPricesIfNotExists(any()))
-        .willReturn(null);
-
-    ResponseOptions responseLower = callGetPrices(symbol.toLowerCase(), days);
-    ResponseOptions responseUpper = callGetPrices(symbol.toUpperCase(), days);
-    String dataLower = objectMapper.writeValueAsString(
-        objectMapper.readTree(responseLower.getBody().asString()).get("data"));
-    String dataUpper = objectMapper.writeValueAsString(
-        objectMapper.readTree(responseUpper.getBody().asString()).get("data"));
-
-    assertEquals(dataLower, dataUpper);
-  }
-
-  /**
    * Missing days uses default value days=20.
    */
   @SneakyThrows
   @Test
   public void testGetPricesMissingDays() {
     String symbol = "IBM";
-    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices(symbol, 30);
+    List<StockPrice> stockPrices = TestDataGenerator.generateStockPrices(symbol, 20);
 
-    BDDMockito.given(this.mockStockPriceService.findStockPricesBySymbol(symbol))
+    BDDMockito.given(this.mockStockPriceService.getStockPrices(symbol, 20, apiKey, basePath))
         .willReturn(stockPrices);
-    BDDMockito.given(this.mockStockPriceService.hasNecessaryStockPrices(any(), anyInt()))
-        .willReturn(true);
 
     ResponseOptions response = callGetPrices(pricePath + "?symbol=" + symbol);
     JsonNode data = objectMapper.readTree(response.getBody().asString()).get("data");
