@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import javax.validation.constraints.Min;
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.galatea.starter.domain.StockPrice;
@@ -17,24 +20,20 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@RequiredArgsConstructor // StockPriceService bean is injected into constructor
 @Slf4j // logging
 @Validated // evaluate method parameter constraint annotations
 @RestController // @Controller + @ResponseBody
 public class StockPriceRestController extends BaseRestController {
 
-  @Autowired
+  @NonNull
   StockPriceService stockPriceService;
-
-  @Autowired
-  IStockPriceRpsy stockPriceRpsy;
 
   @Value("${alpha-vantage.api-key}")
   private String apiKey;
 
   @Value("${alpha-vantage.dailyTimeSeriesPath}")
   private String basePath;
-
-  ObjectMapper objectMapper = new ObjectMapper();
 
   /**
    * Handle /price route.
@@ -54,13 +53,14 @@ public class StockPriceRestController extends BaseRestController {
     // if an external request id was provided, grab it
     processRequestId(requestId);
 
+    // get metadata info
+    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectNode metadata = getMetadata(objectMapper, symbol, days);
+
     // get list of StockPrice objects to return
     List<StockPrice> stockPrices = stockPriceService.getStockPrices(symbol, days, apiKey, basePath);
 
-    // create metadata object
-    ObjectNode metadata = getMetadata(symbol, days);
-
-    // create and return final json with metadata + StockPrice array
+    // create and return final json with metadata + StockPrice list
     ObjectNode rootNode = objectMapper.createObjectNode();
     rootNode.set("metadata", metadata);
     rootNode.set("data", objectMapper.readTree(objectMapper.writeValueAsString(stockPrices)));
@@ -73,7 +73,8 @@ public class StockPriceRestController extends BaseRestController {
    * @param days from params in API request; represents number of days to retrieve stock info
    * @return
    */
-  private ObjectNode getMetadata(final String symbol, final int days) {
+  private ObjectNode getMetadata(final ObjectMapper objectMapper, final String symbol,
+      final int days) {
     ObjectNode metadata = objectMapper.createObjectNode();
     metadata.put("description", "Daily stock prices (open)"); // should i use open or?
     metadata.put("symbol", symbol);
